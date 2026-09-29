@@ -160,6 +160,12 @@ jobs:
       - name: Install idb
         run: |
           export HOMEBREW_NO_AUTO_UPDATE=1
+          # Homebrew 6.0+ will not load code from a non-official tap until it is
+          # trusted. `brew install facebook/fb/idb` trusts only that one formula,
+          # not its dependencies from the same tap (idb-cli), so tap and trust
+          # first. https://docs.brew.sh/Tap-Trust
+          brew tap facebook/fb
+          brew trust facebook/fb
           brew install facebook/fb/idb
           idb --help > /dev/null
           idb list-targets | head -5 || true
