@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """Drive EasyReader through a user journey on a booted iOS Simulator.
 
-Flow, exactly as a user would do it:
-    1. wait for the Main Menu to be on screen
-    2. tap the "Settings" tile, type the folder path into "Host Folder", screenshot
-    3. tap the nav bar's "Home" item to return to the Main Menu, screenshot
-    4. tap the "File Manager" tile, screenshot
+Flow, exactly as a user would do it - each screenshot is numbered by step:
+    1. wait for the Main Menu to be on screen          -> 01-main-menu.png
+    2. tap the "Settings" tile                         -> 02-settings-page.png
+    3. type the folder path into "Host Folder"         -> 03-settings-host-folder.png
+    4. tap the nav bar's "Home" item to return         -> 04-home-again.png
+    5. tap the "File Manager" tile                     -> 05-file-manager.png
+
+Accessibility-tree dumps are saved alongside as tree-*.json (not numbered, so
+the numbers belong to the screenshots alone).
 
 Device lifecycle (boot / install / launch) is done with `xcrun simctl` by the
 workflow. Everything that touches the UI goes through `idb ui` so that elements
@@ -260,18 +264,18 @@ def go_home(driver):
     driver.wait_for(
         lambda nodes: find_label(nodes, "Main Menu"), "the Main Menu", timeout=90
     )
-    driver.screenshot("05-home-again.png")
+    driver.screenshot("04-home-again.png")
 
 
 def open_file_manager(driver):
-    tap_tile(driver, "File Manager", "Manage Readings", "06-file-manager.png")
+    tap_tile(driver, "File Manager", "Manage Readings", "05-file-manager.png")
 
 
 def fill_host_folder(driver, text):
     _node, label_frame = driver.wait_for(
         lambda nodes: find_label(nodes, "Host Folder:"), "the Host Folder label"
     )
-    nodes = driver.tree(tag="03-settings-before-typing")
+    nodes = driver.tree(tag="tree-settings-before-typing")
 
     target = pick_host_folder_field(nodes, label_frame)
     if target is None:
@@ -289,7 +293,7 @@ def fill_host_folder(driver, text):
         driver.type_text("\n")
         time.sleep(1.5)
 
-        current = driver.tree(tag=f"04-settings-after-typing-{attempt}")
+        current = driver.tree(tag=f"tree-settings-after-typing-{attempt}")
         if text_was_entered(current, text):
             log(f"  verified: Host Folder == {text!r}")
             return
@@ -387,7 +391,7 @@ def main():
     # Always capture the final state, even when the entry could not be verified,
     # so the uploaded artifact shows what the run actually produced.
     driver.quiet(10)
-    final = driver.screenshot("settings-host-folder.png")
+    final = driver.screenshot("03-settings-host-folder.png")
 
     if failure:
         log(f"FAILED: {failure}")
