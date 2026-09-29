@@ -32,6 +32,7 @@ import os
 import platform
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import urllib.error
@@ -204,13 +205,75 @@ def human_size(num):
         num /= 1024.0
 
 
+def _clear(path):
+    """Best-effort removal of a file that refuses to be overwritten."""
+    try:
+        os.chmod(path, stat.S_IWRITE)
+    except OSError:
+        pass
+    try:
+        os.remove(path)
+    except OSError:
+        pass
+
+
+def _write_member(zf, member, target):
+    with zf.open(member) as src, open(target, "wb") as out:
+        shutil.copyfileobj(src, out)
+
+
 def safe_extract(zf, dest):
+    """Extract member-by-member, tolerating transient Windows file locks.
+
+    extractall() crashes the whole download if OneDrive/antivirus/the indexer
+    briefly holds one target file (OSError errno 22/13 on Windows, typically on
+    the first member). For each member: try normally, retry once after clearing
+    the existing file, then fall back to a `-1` sibling name so a lock never
+    loses already-downloaded bytes. Returns the list of extracted names.
+    """
     dest = os.path.abspath(dest)
+    os.makedirs(dest, exist_ok=True)
+    extracted, skipped = [], []
+
     for member in zf.infolist():
+        if member.is_dir():
+            continue
         target = os.path.abspath(os.path.join(dest, member.filename))
         if target != dest and not target.startswith(dest + os.sep):
-            raise SystemExit(f"Refusing unsafe zip entry: {member.filename}")
-    zf.extractall(dest)
+            log(f"  ! refused unsafe zip entry: {member.filename}")
+            continue
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+
+        try:
+            _write_member(zf, member, target)
+            extracted.append(member.filename)
+            continue
+        except OSError:
+            pass
+
+        # Locked or read-only leftover: clear it and retry once.
+        _clear(target)
+        try:
+            _write_member(zf, member, target)
+            extracted.append(member.filename)
+            continue
+        except OSError:
+            pass
+
+        # Still failing - keep the bytes under a sibling name.
+        stem, ext = os.path.splitext(member.filename)
+        alt = os.path.join(dest, f"{stem}-1{ext}")
+        try:
+            _write_member(zf, member, alt)
+            log(f"  ! {member.filename} was locked; saved as {os.path.basename(alt)}")
+            extracted.append(os.path.basename(alt))
+        except OSError as exc:
+            skipped.append(member.filename)
+            log(f"  ! could not extract {member.filename}: {exc}")
+
+    if skipped:
+        log(f"  !! {len(skipped)} file(s) skipped: {', '.join(sorted(skipped))}")
+    return extracted
 
 
 def open_file(path):
@@ -337,8 +400,7 @@ def main():
         log(f"  saved {zip_path}")
 
     with zipfile.ZipFile(io.BytesIO(data)) as zf:
-        safe_extract(zf, args.out)
-        extracted = [n for n in zf.namelist() if not n.endswith("/")]
+        extracted = safe_extract(zf, args.out)
 
     log("")
     log(f"Extracted {len(extracted)} file(s) into {os.path.abspath(args.out)}:")
