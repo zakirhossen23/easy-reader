@@ -30,7 +30,7 @@ on:
         default: iPhone 17 Pro
         type: string
       xcode_version:
-        description: Optional Xcode version to select (e.g. 26.4.1). Empty = runner default.
+        description: Optional Xcode version to select (e.g. 26.6). Empty = runner default (26.6 on macos-26).
         required: false
         default: ""
         type: string
@@ -65,16 +65,24 @@ jobs:
 
       - name: Select Xcode
         run: |
+          # Must be >= the version the pinned iOS workload requires (26.6 for
+          # workload set 10.0.401). The macos-26 default is already 26.6.
           if [ -n "${{ inputs.xcode_version }}" ]; then
             sudo xcode-select -s "/Applications/Xcode_${{ inputs.xcode_version }}.app"
           fi
           xcode-select -p
           xcodebuild -version
 
+      # The .NET SDK band and the iOS workload set must be pinned together, and
+      # the workload must match the Xcode on the runner image.
+      #   SDK 10.0.401 + workload set 10.0.401   -> Microsoft.iOS 26.5.10318 -> Xcode 26.6
+      #   SDK 10.0.401 + workload set 10.0.401.1 -> Microsoft.iOS 27.0.10722 -> Xcode 27.0  (needs runs-on: xcode-27)
+      # The Xcode 26.6 set is the one that pairs with macos-26's default Xcode.
+      # See https://github.com/dotnet/macios/releases for the current pairings.
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: 10.0.401
 
       - name: Cache NuGet packages
         uses: actions/cache@v4
@@ -86,7 +94,8 @@ jobs:
       - name: Install MAUI iOS workload
         run: |
           dotnet --version
-          dotnet workload install maui-ios
+          dotnet workload install maui-ios --version 10.0.401
+          dotnet workload --info
 
       - name: Build for the iOS Simulator
         run: |
