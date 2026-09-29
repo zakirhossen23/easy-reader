@@ -1,0 +1,214 @@
+# EasyReader - iOS simulator smoke test with screenshot artifact
+#
+# What this does, end to end, on a GitHub-hosted macOS runner:
+#   1. builds EasyReader for the iOS Simulator (no signing identity required)
+#   2. boots an iPhone simulator and installs + launches the app
+#   3. drives the UI with idb: Main Menu -> Settings tile -> Host Folder field
+#      -> types the folder path
+#   4. uploads the screenshots (and the built .app) as workflow artifacts
+#
+# Why the simulator: simulator builds skip code signing entirely, so this runs
+# with no certificates, provisioning profiles or Apple credentials.
+#
+# Runs on macos-26 because that is the arm64 image whose default Xcode is 26.x.
+# .NET for iOS requires Xcode 26.x, and idb (brew) requires macOS 15+ / Xcode 26+
+# on arm64 - all of which this image satisfies.
+
+name: iOS Settings Screenshot
+
+on:
+  workflow_dispatch:
+    inputs:
+      folder_path:
+        description: Value to type into the Host Folder field
+        required: false
+        default: ABC Utilities
+        type: string
+      device_model:
+        description: Simulator device model
+        required: false
+        default: iPhone 17 Pro
+        type: string
+      xcode_version:
+        description: Optional Xcode version to select (e.g. 26.4.1). Empty = runner default.
+        required: false
+        default: ""
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/ios-settings-screenshot.yml
+      - .github/scripts/ios_settings_screenshot.py
+      - EasyReader/**
+      - EasyReader.slnx
+
+concurrency:
+  group: ios-settings-screenshot-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-screenshot:
+    name: Build, launch and screenshot Settings
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      BUNDLE_ID: com.creativetechusa.easyreader
+      PROJECT: EasyReader/EasyReader.csproj
+      TFM: net10.0-ios
+      RID: iossimulator-arm64
+      ARTIFACTS_DIR: artifacts
+      FOLDER_PATH: ${{ inputs.folder_path || 'ABC Utilities' }}
+      DEVICE_MODEL: ${{ inputs.device_model || 'iPhone 17 Pro' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          if [ -n "${{ inputs.xcode_version }}" ]; then
+            sudo xcode-select -s "/Applications/Xcode_${{ inputs.xcode_version }}.app"
+          fi
+          xcode-select -p
+          xcodebuild -version
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('EasyReader/EasyReader.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Install MAUI iOS workload
+        run: |
+          dotnet --version
+          dotnet workload install maui-ios
+
+      - name: Build for the iOS Simulator
+        run: |
+          dotnet build "$PROJECT" \
+            -f "$TFM" \
+            -c Debug \
+            -p:TargetFrameworks=$TFM \
+            -p:RuntimeIdentifier=$RID \
+            -p:ApplicationId=$BUNDLE_ID
+
+          APP_PATH=$(find . -type d -name "*.app" -path "*$RID*" -not -path "*/obj/*" | head -1)
+          test -n "$APP_PATH" || (echo "No .app bundle was produced"; exit 1)
+          echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
+          echo "Built: $APP_PATH"
+
+      - name: Select simulator
+        run: |
+          python3 - "$DEVICE_MODEL" "$GITHUB_ENV" <<'PY'
+          import json, subprocess, sys
+
+          model, env_file = sys.argv[1], sys.argv[2]
+          listing = json.loads(
+              subprocess.check_output(
+                  ["xcrun", "simctl", "list", "devices", "available", "--json"]
+              )
+          )
+
+          exact, iphones = [], []
+          for runtime, devices in listing["devices"].items():
+              if "iOS" not in runtime:
+                  continue
+              for dev in devices:
+                  if not dev.get("isAvailable"):
+                      continue
+                  if dev["name"] == model:
+                      exact.append((runtime, dev))
+                  if dev["name"].startswith("iPhone"):
+                      iphones.append((runtime, dev))
+
+          pool, note = exact, ""
+          if not pool:
+              pool, note = iphones, f"'{model}' is not installed, falling back to "
+          if not pool:
+              sys.exit(f"No iOS simulator available for {model}")
+
+          runtime, dev = max(pool, key=lambda item: item[0])
+          with open(env_file, "a") as fh:
+              fh.write(f"SIM_UDID={dev['udid']}\n")
+              fh.write(f"SIM_NAME={dev['name']}\n")
+              fh.write(f"SIM_RUNTIME={runtime}\n")
+          print(f"::notice::Running on {note}{dev['name']} ({runtime}) udid={dev['udid']}")
+          PY
+
+      - name: Boot simulator
+        run: |
+          xcrun simctl bootstatus "$SIM_UDID" -b
+          # Tidy status bar so screenshots look intentional.
+          xcrun simctl status_bar "$SIM_UDID" override \
+            --time "9:41" --batteryState charged --batteryLevel 100 \
+            --wifiBars 3 --cellularBars 4 || true
+
+      - name: Install idb
+        run: |
+          export HOMEBREW_NO_AUTO_UPDATE=1
+          brew install facebook/fb/idb
+          idb --help > /dev/null
+          idb list-targets | head -5 || true
+
+      - name: Install and launch the app
+        run: |
+          xcrun simctl install "$SIM_UDID" "$APP_PATH"
+          xcrun simctl launch "$SIM_UDID" "$BUNDLE_ID"
+
+      - name: Open Settings, enter the folder path, screenshot
+        run: |
+          python3 .github/scripts/ios_settings_screenshot.py \
+            --udid "$SIM_UDID" \
+            --text "$FOLDER_PATH" \
+            --out "$ARTIFACTS_DIR/screenshots"
+
+      - name: Collect diagnostics
+        if: always()
+        run: |
+          mkdir -p "$ARTIFACTS_DIR/diagnostics"
+          xcrun simctl io "$SIM_UDID" screenshot "$ARTIFACTS_DIR/diagnostics/final-state.png" || true
+          idb ui describe-all --udid "$SIM_UDID" > "$ARTIFACTS_DIR/diagnostics/accessibility-tree.txt" 2>&1 || true
+          xcrun simctl spawn "$SIM_UDID" log show --last 5m \
+            --predicate 'process == "EasyReader"' --style compact \
+            > "$ARTIFACTS_DIR/diagnostics/app-log.txt" 2>&1 || true
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: settings-screenshot
+          # *.png are the screenshots, tree-*.json are accessibility dumps.
+          path: ${{ env.ARTIFACTS_DIR }}/screenshots/*
+          if-no-files-found: warn
+
+      - name: Upload diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics
+          path: ${{ env.ARTIFACTS_DIR }}/diagnostics/*
+          if-no-files-found: ignore
+
+      - name: Zip the simulator build
+        if: always()
+        run: |
+          if [ -z "$APP_PATH" ] || [ ! -d "$APP_PATH" ]; then
+            echo "No app bundle to zip"; exit 0
+          fi
+          mkdir -p "$ARTIFACTS_DIR/app"
+          # ditto keeps the bundle's symlinks and structure intact.
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" \
+            "$ARTIFACTS_DIR/app/EasyReader-simulator.zip"
+
+      - name: Upload the simulator app
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-simulator-app
+          path: ${{ env.ARTIFACTS_DIR }}/app/EasyReader-simulator.zip
+          if-no-files-found: warn
