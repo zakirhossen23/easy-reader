@@ -5,7 +5,9 @@
 #   2. boots an iPhone simulator and installs + launches the app
 #   3. drives the UI with idb: Main Menu -> Settings tile -> Host Folder field
 #      -> types the folder path -> Home -> File Manager tile
-#   4. uploads the screenshots (and the built .app) as workflow artifacts
+#   4. uploads the screenshots as workflow artifacts; the built .app is only
+#      uploaded when the `upload_app` input is true (default false, so manual
+#      runs stay small unless you opt in)
 #
 # Why the simulator: simulator builds skip code signing entirely, so this runs
 # with no certificates, provisioning profiles or Apple credentials.
@@ -34,6 +36,11 @@ on:
         required: false
         default: ""
         type: string
+      upload_app:
+        description: Also upload the built simulator .app (ios-simulator-app artifact)
+        required: false
+        default: false
+        type: boolean
   push:
     branches: [main]
     paths:
@@ -59,6 +66,9 @@ jobs:
       ARTIFACTS_DIR: artifacts
       FOLDER_PATH: ${{ inputs.folder_path || 'ABC Utilities' }}
       DEVICE_MODEL: ${{ inputs.device_model || 'iPhone 17 Pro' }}
+      # Boolean dispatch inputs arrive as the strings "true"/"false"; push runs
+      # have an empty inputs context, which is falsy here too.
+      UPLOAD_APP: ${{ inputs.upload_app || 'false' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -211,8 +221,10 @@ jobs:
           path: ${{ env.ARTIFACTS_DIR }}/diagnostics/*
           if-no-files-found: ignore
 
+      # Opt-in via the `upload_app` input (default false) - the .app zip is the
+      # largest artifact and is only needed when you want to install it locally.
       - name: Zip the simulator build
-        if: always()
+        if: always() && env.UPLOAD_APP == 'true'
         run: |
           if [ -z "$APP_PATH" ] || [ ! -d "$APP_PATH" ]; then
             echo "No app bundle to zip"; exit 0
@@ -223,7 +235,7 @@ jobs:
             "$ARTIFACTS_DIR/app/EasyReader-simulator.zip"
 
       - name: Upload the simulator app
-        if: always()
+        if: always() && env.UPLOAD_APP == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ios-simulator-app
