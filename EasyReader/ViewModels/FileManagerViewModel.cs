@@ -2287,6 +2287,18 @@ namespace EasyReader.ViewModels
                     UpdateProperties();
                 }
 
+                // On first launch the folder paths may not be set yet -
+                // CreateDirectoriesAsync runs in the background in MainViewModel,
+                // so this fire-and-forget task can win the race. Bail out quietly;
+                // the next launch will have the paths and do the cleanup.
+                if (string.IsNullOrEmpty(Properties.AccountsBackupFilesFolderPath)
+                    || string.IsNullOrEmpty(Properties.ServiceOrdersBackupFilesFolderPath)
+                    || string.IsNullOrEmpty(Properties.ServiceOrdersFolderPath)
+                    || !Directory.Exists(Properties.AccountsBackupFilesFolderPath)
+                    || !Directory.Exists(Properties.ServiceOrdersBackupFilesFolderPath)
+                    || !Directory.Exists(Properties.ServiceOrdersFolderPath))
+                    return;
+
                 // check for old backup account files (csvs)
                 foreach (string file in Directory.GetFiles(Properties.AccountsBackupFilesFolderPath))
                 {
@@ -2324,7 +2336,10 @@ namespace EasyReader.ViewModels
             }
             catch (Exception ex)
             {
-                await Application.Current.MainPage.DisplayAlert("Error", ex.Message, "OK");
+                // Background maintenance must never surface UI: an alert here pops
+                // over whatever the user is doing (it was seen stealing focus from
+                // the Download New Readings action sheet).
+                System.Diagnostics.Debug.WriteLine($"DeleteOldBackupsAsync failed: {ex.Message}");
             }
         }
 

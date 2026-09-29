@@ -45,11 +45,15 @@ namespace EasyReader.ViewModels
             // SETUP OLD DIRECTORY PATHS - ACTIVE ONLY IN 2.1.7
             SetupOldDirectoryPaths();
 
-            // CREATE DIRECTORIES (run in background so constructor/navigation doesn't block UI)
-            _ = System.Threading.Tasks.Task.Run(async () => { await CreateDirectoriesAsync().ConfigureAwait(false); });
-
-            // TRANSFER FILES FROM OLD DIRECTORIES TO NEW - run in background as well
-            _ = System.Threading.Tasks.Task.Run(async () => { await TransferFilesToNewDirectoriesAsync().ConfigureAwait(false); });
+            // CREATE DIRECTORIES + TRANSFER FILES FROM OLD DIRECTORIES - one background
+            // task, chained in order so they cannot race each other (the transfer must
+            // see the final paths, not mid-update state). Background so constructor /
+            // navigation doesn't block the UI.
+            _ = System.Threading.Tasks.Task.Run(async () =>
+            {
+                await CreateDirectoriesAsync().ConfigureAwait(false);
+                await TransferFilesToNewDirectoriesAsync().ConfigureAwait(false);
+            });
 
         }
 
@@ -154,24 +158,30 @@ namespace EasyReader.ViewModels
                 // storage permissions
                 await CheckRequestStoragePermissionsAsync();
 
-                // transfer files
-                if (Properties.AccountsFolderPath_OLD != Properties.AccountsFolderPath)
-                    Directory.Move(Properties.AccountsFolderPath_OLD, Properties.AccountsFolderPath);
-                if (Properties.AccountsBackupFilesFolderPath_OLD != Properties.AccountsBackupFilesFolderPath)
-                    Directory.Move(Properties.AccountsBackupFilesFolderPath_OLD, Properties.AccountsBackupFilesFolderPath);
-                if (Properties.ImportedFilesFolderPath_OLD != Properties.ImportedFilesFolderPath)
-                    Directory.Move(Properties.ImportedFilesFolderPath_OLD, Properties.ImportedFilesFolderPath);
-                if (Properties.ExportedFilesFolderPath_OLD != Properties.ExportedFilesFolderPath)
-                    Directory.Move(Properties.ExportedFilesFolderPath_OLD, Properties.ExportedFilesFolderPath);
-                if (Properties.ServiceOrdersFolderPath_OLD != Properties.ServiceOrdersFolderPath)
-                    Directory.Move(Properties.ServiceOrdersFolderPath_OLD, Properties.ServiceOrdersFolderPath);
-                if (Properties.ServiceOrdersBackupFilesFolderPath_OLD != Properties.ServiceOrdersBackupFilesFolderPath)
-                    Directory.Move(Properties.ServiceOrdersBackupFilesFolderPath_OLD, Properties.ServiceOrdersBackupFilesFolderPath);
+                // transfer files. Skip when either side is unset/missing: on a
+                // first install the OLD paths are null and Directory.Move(null, ...)
+                // throws ArgumentNullException (this used to pop a stray "Error"
+                // alert over the UI from a background thread).
+                MoveDirectoryIfChanged(Properties.AccountsFolderPath_OLD, Properties.AccountsFolderPath);
+                MoveDirectoryIfChanged(Properties.AccountsBackupFilesFolderPath_OLD, Properties.AccountsBackupFilesFolderPath);
+                MoveDirectoryIfChanged(Properties.ImportedFilesFolderPath_OLD, Properties.ImportedFilesFolderPath);
+                MoveDirectoryIfChanged(Properties.ExportedFilesFolderPath_OLD, Properties.ExportedFilesFolderPath);
+                MoveDirectoryIfChanged(Properties.ServiceOrdersFolderPath_OLD, Properties.ServiceOrdersFolderPath);
+                MoveDirectoryIfChanged(Properties.ServiceOrdersBackupFilesFolderPath_OLD, Properties.ServiceOrdersBackupFilesFolderPath);
             }
             catch (Exception ex)
             {
-                await Application.Current.MainPage.DisplayAlert("Error", ex.Message, "OK");
+                // Background migration must never surface UI - log instead.
+                System.Diagnostics.Debug.WriteLine($"TransferFilesToNewDirectoriesAsync failed: {ex.Message}");
             }
+        }
+        private static void MoveDirectoryIfChanged(string oldPath, string newPath)
+        {
+            if (string.IsNullOrEmpty(oldPath) || string.IsNullOrEmpty(newPath) || oldPath == newPath)
+                return;
+            if (!Directory.Exists(oldPath) || Directory.Exists(newPath))
+                return;
+            Directory.Move(oldPath, newPath);
         }
 
         // NAVIGATION
