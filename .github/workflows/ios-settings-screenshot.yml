@@ -4,7 +4,7 @@
 #   1. builds EasyReader for the iOS Simulator (no signing identity required)
 #   2. boots an iPhone simulator and installs + launches the app
 #   3. drives the UI with idb: Main Menu -> Settings tile -> Host Folder field
-#      -> types the folder path
+#      -> types the folder path -> Home -> File Manager tile
 #   4. uploads the screenshots (and the built .app) as workflow artifacts
 #
 # Why the simulator: simulator builds skip code signing entirely, so this runs
@@ -48,7 +48,7 @@ concurrency:
 
 jobs:
   build-and-screenshot:
-    name: Build, launch and screenshot Settings
+    name: Build, launch and walk the Settings/File Manager journey
     runs-on: macos-26
     timeout-minutes: 60
     env:
@@ -175,10 +175,12 @@ jobs:
           xcrun simctl install "$SIM_UDID" "$APP_PATH"
           xcrun simctl launch "$SIM_UDID" "$BUNDLE_ID"
 
-      - name: Open Settings, enter the folder path, screenshot
+      # Settings -> Host Folder -> Home -> File Manager, screenshotting each leg.
+      - name: Walk the UI journey and capture screenshots
         run: |
           python3 .github/scripts/ios_settings_screenshot.py \
             --udid "$SIM_UDID" \
+            --bundle-id "$BUNDLE_ID" \
             --text "$FOLDER_PATH" \
             --out "$ARTIFACTS_DIR/screenshots"
 

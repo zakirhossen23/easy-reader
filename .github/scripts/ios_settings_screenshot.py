@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Drive EasyReader's Settings page on a booted iOS Simulator and capture screenshots.
+"""Drive EasyReader through a user journey on a booted iOS Simulator.
 
-Flow (as a user would do it):
+Flow, exactly as a user would do it:
     1. wait for the Main Menu to be on screen
-    2. tap the "Settings" tile
-    3. tap the "Host Folder" text field
-    4. type the folder path
-    5. screenshot the result
+    2. tap the "Settings" tile, type the folder path into "Host Folder", screenshot
+    3. tap the nav bar's "Home" item to return to the Main Menu, screenshot
+    4. tap the "File Manager" tile, screenshot
 
 Device lifecycle (boot / install / launch) is done with `xcrun simctl` by the
 workflow. Everything that touches the UI goes through `idb ui` so that elements
@@ -111,6 +110,24 @@ def find_label(nodes, text):
     return node, frame_of(node)
 
 
+def find_tappable(nodes, text):
+    """A tappable node carrying exactly this label, preferring real buttons.
+
+    Nav bar items (the "Home" toolbar item) show up as buttons, but a plain
+    label works too, so fall back to whatever carries the label.
+    """
+    wanted = text.strip().casefold()
+    matches = [
+        (n, f)
+        for n, f in ((n, frame_of(n)) for n in nodes)
+        if f and label_of(n).strip().casefold() == wanted
+    ]
+    if not matches:
+        return None
+    matches.sort(key=lambda nf: 0 if "button" in type_of(nf[0]).lower() else 1)
+    return matches[0]
+
+
 def text_fields(nodes):
     return [
         (n, f)
@@ -123,9 +140,10 @@ def text_fields(nodes):
 
 
 class Driver:
-    def __init__(self, udid, out_dir):
+    def __init__(self, udid, out_dir, bundle_id):
         self.udid = udid
         self.out_dir = out_dir
+        self.bundle_id = bundle_id
 
     def idb(self, *args, timeout=180):
         return run(["idb", *args, "--udid", self.udid], timeout=timeout)
@@ -190,15 +208,18 @@ def wait_for_home(driver):
     driver.screenshot("01-main-menu.png")
 
 
-def open_settings(driver):
+def tap_tile(driver, caption, expect, screenshot=None):
+    """Tap a Main Menu tile by its caption, then wait for the destination page.
+
+    A tile is a Frame > Grid > (ImageButton above, caption Label below), and the
+    button's bottom edge sits exactly where the caption starts. Prefer the real
+    button hit target when the accessibility tree exposes one, otherwise tap the
+    icon directly above the caption.
+    """
     _node, frame = driver.wait_for(
-        lambda nodes: find_label(nodes, "Settings"), "the Settings tile"
+        lambda nodes: find_label(nodes, caption), f"the {caption} tile"
     )
 
-    # The tile is a Frame > Grid > (ImageButton above, caption Label below), and
-    # the button's bottom edge sits exactly where the caption starts. Prefer the
-    # real button hit target when the accessibility tree exposes one, otherwise
-    # tap the icon directly above the caption.
     button = closest_button_above(driver.tree(), frame)
     if button:
         x, y = center(button)
@@ -208,10 +229,42 @@ def open_settings(driver):
 
     driver.tap(x, y)
     driver.quiet(20)
+    driver.wait_for(lambda nodes: find_label(nodes, expect), expect, timeout=60)
+    if screenshot:
+        driver.screenshot(screenshot)
+
+
+def open_settings(driver):
+    tap_tile(driver, "Settings", "Host Folder:", "02-settings-page.png")
+
+
+def go_home(driver):
+    """Return to the Main Menu via the nav bar's "Home" item (PopToRootAsync).
+
+    Every page carries that toolbar item, but if iOS does not surface it in the
+    accessibility tree, fall back to relaunching the app: the Main Menu is the
+    Shell root, so a fresh launch lands on it too.
+    """
+    try:
+        _node, frame = driver.wait_for(
+            lambda nodes: find_tappable(nodes, "Home"), "the Home button", timeout=30
+        )
+    except SystemExit:
+        log(f"  !! no Home item in the tree - relaunching {driver.bundle_id}")
+        run(["xcrun", "simctl", "terminate", driver.udid, driver.bundle_id])
+        run(["xcrun", "simctl", "launch", driver.udid, driver.bundle_id])
+    else:
+        driver.tap(*center(frame))
+
+    driver.quiet(15)
     driver.wait_for(
-        lambda nodes: find_label(nodes, "Host Folder:"), "the Settings page", timeout=60
+        lambda nodes: find_label(nodes, "Main Menu"), "the Main Menu", timeout=90
     )
-    driver.screenshot("02-settings-page.png")
+    driver.screenshot("05-home-again.png")
+
+
+def open_file_manager(driver):
+    tap_tile(driver, "File Manager", "Manage Readings", "06-file-manager.png")
 
 
 def fill_host_folder(driver, text):
@@ -306,13 +359,18 @@ def main():
     parser.add_argument("--udid", required=True, help="booted simulator UDID")
     parser.add_argument("--text", required=True, help="folder path to type")
     parser.add_argument("--out", required=True, help="screenshot output directory")
+    parser.add_argument(
+        "--bundle-id",
+        default="com.creativetechusa.easyreader",
+        help="app bundle id, used only by the relaunch fallback",
+    )
     args = parser.parse_args()
 
     if not shutil.which("idb"):
         raise SystemExit("idb is not on PATH (brew install facebook/fb/idb)")
     os.makedirs(args.out, exist_ok=True)
 
-    driver = Driver(args.udid, args.out)
+    driver = Driver(args.udid, args.out, args.bundle_id)
     log(f"idb target: {args.udid}")
     # Starts (or reuses) the companion backing this simulator.
     run(["idb", "connect", args.udid])
@@ -333,6 +391,15 @@ def main():
 
     if failure:
         log(f"FAILED: {failure}")
+        return 1
+
+    # Continue the journey from a known-good Settings page: back to the Main
+    # Menu, then into the File Manager.
+    try:
+        go_home(driver)
+        open_file_manager(driver)
+    except SystemExit as exc:
+        log(f"FAILED: {exc}")
         return 1
 
     log(f"done -> {final}")
