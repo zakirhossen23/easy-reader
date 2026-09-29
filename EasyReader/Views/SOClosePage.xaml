@@ -1,0 +1,447 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodel="clr-namespace:EasyReader.ViewModels"
+             xmlns:local="clr-namespace:EasyReader.Views"
+             mc:Ignorable="d"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="EasyReader.Views.SOClosePage"
+             BackgroundColor="White">
+
+    <!-- VIEW MODEL + TITLE VIEW + TOOLBAR-->
+    <ContentPage.BindingContext>
+        <viewmodel:SOCloseViewModel/>
+    </ContentPage.BindingContext>
+    <Shell.TitleView>
+        <Label Text="{OnIdiom Tablet='Service Orders', Phone='Service'}" Style="{StaticResource LblTitleView}"/>
+    </Shell.TitleView>
+    <ContentPage.ToolbarItems>
+        
+        <ToolbarItem Text="Home" Command="{Binding GoTo_MainPage_Command}" Order="Primary" Priority="0"/>
+        <ToolbarItem IconImageSource="settings.png" Command="{Binding GoTo_SettingsPage_Command}" Order="Primary" Priority="1"/>
+    </ContentPage.ToolbarItems>
+    <!--END-->
+
+    <!--RESOURCES-->
+    <ContentPage.Resources>
+        <Style x:Key="FrameSOCl" TargetType="Frame">
+            <Setter Property="BorderColor" Value="{StaticResource PrimaryDkOffset}"/>
+            <Setter Property="BackgroundColor" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="HasShadow" Value="False"/>
+        </Style>
+        <Style x:Key="LblHeaderSOCl" TargetType="Label">
+            <Setter Property="TextColor" Value="{StaticResource Primary}"/>
+            <Setter Property="FontSize" Value="{OnIdiom Tablet=30, Phone=18}"/>
+            <Setter Property="FontAttributes" Value="Bold"/>
+            <Setter Property="VerticalTextAlignment" Value="Center"/>
+            <Setter Property="LineBreakMode" Value="TailTruncation"/>
+        </Style>
+        <Style x:Key="BtnActionSOCl" TargetType="Button">
+            <Setter Property="BackgroundColor" Value="{StaticResource PrimaryOffset}"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="FontSize" Value="{OnIdiom Phone=11}"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Margin" Value="10, 0"/>
+            <Setter Property="Padding" Value="1"/>
+            
+            <Setter Property="VerticalOptions" Value="FillAndExpand"/>
+        </Style>
+        <Style x:Key="BoxPopupBackgroundSOCl" TargetType="BoxView">
+            <Setter Property="BackgroundColor" Value="#ac000000"/>
+            <Setter Property="Grid.ColumnSpan" Value="5"/>
+            <Setter Property="Grid.RowSpan" Value="8"/>
+        </Style>        
+        <Style x:Key="EntrySOCl" TargetType="Entry">
+            <Setter Property="BackgroundColor" Value="Transparent"/>
+            <Setter Property="TextColor" Value="Black"/>
+            <Setter Property="FontSize" Value="{OnIdiom Tablet=18, Phone=13}"/>
+            <Setter Property="Margin" Value="5, 1"/>
+            <Setter Property="HeightRequest" Value="25"/>
+            <Setter Property="VerticalTextAlignment" Value="{OnPlatform Android=End, iOS=Center}"/>
+            <Setter Property="HorizontalTextAlignment" Value="Start"/>
+        </Style>
+    </ContentPage.Resources>
+    <!--END RESOURCES-->
+        
+    <!--OUTER GRID-->
+    <Grid RowDefinitions="*" ColumnDefinitions="*" >
+
+        <Grid x:Name="outerGrid" ColumnDefinitions="*,*" RowDefinitions="Auto,*" >
+            <Grid x:Name="innerTimingGrid" Grid.Column="0" Grid.Row="0" RowDefinitions="*,Auto,*">
+                <!--INNER GRID-->
+                <Grid x:Name="innerGrid" Grid.Column="0" ColumnDefinitions="*, *, *, *"
+        
+        Style="{StaticResource GridPadding}" >
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+
+
+                    <!--BOX VIEWS-->
+                    <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="0"/>
+                    <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="0"/>
+                    <BoxView Style="{StaticResource BoxName}" Grid.Column="2" Grid.Row="0"/>
+                    <BoxView Style="{StaticResource BoxValue}" Grid.Column="3" Grid.Row="0"/>
+                    <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="1"/>
+                    <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="1"/>
+                    <BoxView Style="{StaticResource BoxName}" Grid.Column="2" Grid.Row="1"/>
+                    <BoxView Style="{StaticResource BoxValue}" Grid.Column="3" Grid.Row="1"/>
+                    <!--END BOX VIEWS-->
+
+                    <!--LABELS-->
+                    <Label Text="SO Number:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="0"/>
+                    <Label Text="{Binding ServiceOrder.SONum}" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="0"/>
+                    <Label Text="Priority:" Style="{StaticResource Lbl}" Grid.Column="2" Grid.Row="0"/>
+                    <Label Text="{Binding ServiceOrder.SOInfo.SOPriority}" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="0"/>
+                    <Label Text="Index:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="1"/>
+                    <Label Text="{Binding IndexLabel}" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="1"/>
+                    <Label Text="Status:" Style="{StaticResource Lbl}" Grid.Column="2" Grid.Row="1"/>
+                    <Label Text="{Binding ServiceOrder.SOInfo.SOStatus}" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="1"/>
+                    <!--END LABELS-->
+
+
+                </Grid>
+                <!--END INNER GRID-->
+                <Grid x:Name="TimingGrid" Grid.Row="1" Padding="8,0,8,8"  Style="{StaticResource GridPadding}"   RowDefinitions="*" ColumnDefinitions="*,*,*,*">
+                    <!--TIME-->
+                    <Frame Style="{StaticResource FrameSOCl}" Grid.ColumnSpan="4" Grid.Row="0"/>
+                    <Label Text="Time:" Style="{StaticResource LblHeaderSOCl}" HorizontalTextAlignment="Start" Margin="10, 0" Grid.Column="0" Grid.Row="0"/>
+                    <Button Text="{Binding StartStopBtnLbl}" Command="{Binding StartEndService_Command}" Style="{StaticResource BtnActionSOCl}"
+ Margin="8" Grid.Column="1" Grid.Row="0"/>
+                    <BoxView Style="{StaticResource BoxName}" BackgroundColor="#33a532" Margin="8" Grid.Column="2" Grid.Row="0"/>
+                    <BoxView Style="{StaticResource BoxName}" BackgroundColor="#ff0000" Margin="8" Grid.Column="3" Grid.Row="0"/>
+                    <Label Text="{Binding ServiceOrder.SOInfo.ServiceStartTime}" Style="{StaticResource Lbl}" 
+HorizontalTextAlignment="Center" Grid.Column="2" Grid.Row="0"/>
+                    <Label Text="{Binding ServiceOrder.SOInfo.ServiceEndTime}" Style="{StaticResource Lbl}"
+HorizontalTextAlignment="Center" Grid.Column="3" Grid.Row="0"/>
+                    <!--END TIME-->
+
+                </Grid>
+                <Grid x:Name="actionGrid" RowSpacing="5" Padding="8,0,8,8" Style="{StaticResource GridPadding}"  RowDefinitions="5,*,*,5" Grid.Row="3">
+
+
+                    <!--CLOSE + METER DETAILS-->
+                    <Frame Style="{StaticResource FrameSOCl}" Grid.RowSpan="5"/>
+                    <Button x:Name="btnCloseSO" Text="CLOSE SERVICE ORDER" Command="{Binding CloseSO_Command}"
+Style="{StaticResource BtnActionSOCl}" BackgroundColor="Green" Grid.Row="1"/>
+                  
+                    <!--END SAVE + METER DETAILS-->
+                </Grid>
+
+            </Grid>
+            <Grid x:Name="UpdateActionGrid" Grid.Column="1" Grid.Row="0" RowDefinitions="*">
+                <Grid x:Name="UpdateSOGrid" Style="{StaticResource GridPadding}"   Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,*" RowDefinitions="50,*,0">
+                    <!--ACTION BUTTONS-->
+                    <Frame Style="{StaticResource FrameSOCl}" Grid.ColumnSpan="4" Grid.Row="0" Grid.RowSpan="3"/>
+                    <Label Text="Update Service Order" Style="{StaticResource LblHeaderSOCl}"
+HorizontalTextAlignment="Center" Margin="5,5" Grid.ColumnSpan="4" Grid.Row="0"/>
+                    <Grid x:Name="updateGrid1" RowSpacing="8" RowDefinitions="*,*,*,*" ColumnDefinitions="*" Grid.Column="0"  Grid.Row="1">
+                        <Button x:Name="btnStatus" Grid.Row="0" Text="Update Status" Command="{Binding UpdateStatus_Command}" Style="{StaticResource BtnActionSOCl}"/>
+                        <Button x:Name="btnAction"  Grid.Row="1" Text="Select Action" Command="{Binding UpdateActionTaken_Command}" Style="{StaticResource BtnActionSOCl}"/>
+                        <Button x:Name="btnParts"  Grid.Row="2" Text="Select Parts" Command="{Binding OpenPartsSelection_Command}" Style="{StaticResource BtnActionSOCl}"/>
+                        <Button x:Name="btnTech"  Grid.Row="3" Text="Select Technician" Command="{Binding UpdateTechnician_Command}" Style="{StaticResource BtnActionSOCl}"/>
+                    </Grid>
+                    <Grid x:Name="updateGrid2" RowSpacing="8" RowDefinitions="*,*,*,*" ColumnDefinitions="*" Grid.Column="1"  Grid.Row="1">
+                        <Button x:Name="btnNote" Grid.Row="0" Text="Enter Note" Command="{Binding GoTo_NotesPage_Command}" Style="{StaticResource BtnActionSOCl}"/>
+                        <Button x:Name="btnPhoto" Grid.Row="1" Text="Take Photo" Command="{Binding TakeSavePhoto_Command}" Style="{StaticResource BtnActionSOCl}"/>
+                        <Button x:Name="btnMeter" Grid.Row="2" Text="Change Meter" Command="{Binding OpenChangeMeter_Command}" Style="{StaticResource BtnActionSOCl}"/>
+                        <Button x:Name="btnMeterDet" Text="METER DETAILS" Command="{Binding OpenCloseMeterDetails_Command}"
+Style="{StaticResource BtnActionSOCl}"  Grid.Row="3"/>
+                    </Grid>
+                    <!--END ACTION BUTTONS-->
+
+                </Grid>
+              
+
+            </Grid>
+         
+      </Grid>
+
+      <!--
+            
+            
+            POP-UPS START HERE
+            
+            
+        -->
+
+        <!--PARTS GRID-->
+        <BoxView IsVisible="{Binding ViewPartsSelection}" Style="{StaticResource BoxPopupBackgroundSOCl}"/>
+        <Grid x:Name="gridParts" IsVisible="{Binding ViewPartsSelection}" 
+                VerticalOptions="Center"    Grid.ColumnSpan="3"
+  HorizontalOptions="Center"
+              ColumnDefinitions="*,*"
+              BackgroundColor="Transparent" Padding="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="{OnIdiom Tablet=50, Phone=38}"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!--FRAME + TITLE-->
+            <!--FRAME + TITLE-->
+            <Border Style="{StaticResource BorderPopupBackground}" 
+Grid.ColumnSpan="2" 
+Grid.RowSpan="2"/>
+
+           
+            <Label Text="Select Parts" Style="{StaticResource f9LblPopupTitle}"/>
+            <!--END-->
+            <Button x:Name="btnPartsX"  Margin="0,-20,-20,0" Command="{Binding ClosePartsSelection_Command}" IsVisible="{Binding ViewPartsSelection}" 
+Style="{StaticResource BtnPopupXOut}" />
+
+            <!--PARTS SELECTION-->
+            <CollectionView ItemsSource="{Binding PartsList}" Margin="{OnIdiom Tablet='10, 0, 10, 10', Phone='8, 0, 8, 8'}" Grid.Row="1">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="40, *">
+                            <CheckBox IsChecked="{Binding IsSelected}" Color="{StaticResource Primary}" Margin="5, 0"
+                                      HorizontalOptions="Center" VerticalOptions="Center" Grid.Column="0"/>
+                            <Label Text="{Binding Name}" TextColor="{StaticResource Primary}"
+                                   HorizontalTextAlignment="Start" VerticalTextAlignment="Center" Grid.Column="1"/>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+            <!--END PARTS SELECTION-->
+           
+        </Grid>
+     
+        <!--END PARTS GRID-->
+
+        <!--CHANGE METER GRID-->
+        <BoxView IsVisible="{Binding ViewChangeMeter}" Style="{StaticResource BoxPopupBackgroundSOCl}"/>
+        <Grid x:Name="gridChangeMeter" IsVisible="{Binding ViewChangeMeter}"  Style="{StaticResource GridPadding}"
+        BackgroundColor="Transparent"
+        Padding="20"
+                 Grid.ColumnSpan="3"
+        VerticalOptions="Center"
+        RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+            <Grid.ColumnDefinitions>
+
+                <ColumnDefinition Width="{OnIdiom Tablet=4, Phone=2}"/>
+
+                <ColumnDefinition Width="*"/>
+
+                <ColumnDefinition Width="*"/>
+
+                <ColumnDefinition Width="*"/>
+
+                <ColumnDefinition Width="*"/>
+
+                <ColumnDefinition Width="{OnIdiom Tablet=4, Phone=2}"/>
+
+            </Grid.ColumnDefinitions>
+            <!--FRAME + TITLE-->
+            <Border Style="{StaticResource BorderPopupBackground}" 
+            Grid.ColumnSpan="6" 
+            Grid.RowSpan="6"/>
+
+                <Label Text="Meter Changeout" 
+           Style="{StaticResource f9LblPopupTitle}" 
+           Grid.ColumnSpan="6" 
+           HorizontalTextAlignment="Center"
+           Margin="0,10"/>
+
+            <!--END-->
+
+            <!--BOX VIEWS (Backgrounds for Inputs)-->
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="1" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="2" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="3" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="4" Grid.Row="1"/>
+
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="1" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxValueLong}" Grid.Column="2" Grid.ColumnSpan="3" Grid.Row="2"/>
+
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="1" Grid.Row="3"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="2" Grid.Row="3"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="3" Grid.Row="3"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="4" Grid.Row="3"/>
+
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="1" Grid.Row="4"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="2" Grid.Row="4"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="3" Grid.Row="4"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="4" Grid.Row="4"/>
+
+            <!--LABELS + ENTRIES-->
+            <!-- Row 1 -->
+            <Label Text="Meter #:" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="1"/>
+            <Entry Text="{Binding MeterNumEntry}" Style="{StaticResource EntrySOCl}" MaxLength="10" Grid.Column="2" Grid.Row="1"/>
+            <Label Text="MXU #:" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="1"/>
+            <Entry Text="{Binding MXUNumEntry}" Style="{StaticResource EntrySOCl}" MaxLength="12" Grid.Column="4" Grid.Row="1"/>
+
+            <!-- Row 2 -->
+            <Label Text="Meter Brand:" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="2"/>
+            <Entry Text="{Binding MeterBrandEntry}" Style="{StaticResource EntrySOCl}" MaxLength="12" Grid.Column="2" Grid.ColumnSpan="3" Grid.Row="2"/>
+
+            <!-- Row 3 -->
+            <Label Text="Meter Size:" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="3"/>
+            <Entry Text="{Binding MeterSizeEntry}" Style="{StaticResource EntrySOCl}" MaxLength="6" Grid.Column="2" Grid.Row="3"/>
+            <Label Text="Meter Num. Dials:" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="3"/>
+            <Entry Text="{Binding MeterNumDialsEntry}" Style="{StaticResource EntrySOCl}" MaxLength="4" Keyboard="Numeric" Grid.Column="4" Grid.Row="3"/>
+
+            <!-- Row 4 -->
+            <Label Text="Final Reading:" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="4"/>
+            <Entry Text="{Binding FinalReadingEntry}" Style="{StaticResource EntrySOCl}" Keyboard="Numeric" Grid.Column="2" Grid.Row="4"/>
+            <Label Text="Initial Reading:" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="4"/>
+            <Entry Text="{Binding InitialReadingEntry}" Style="{StaticResource EntrySOCl}" Keyboard="Numeric" Grid.Column="4" Grid.Row="4"/>
+
+            <!--SAVE + CANCEL BUTTONS-->
+            <HorizontalStackLayout Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="4" HorizontalOptions="End" Spacing="10" Margin="0,15,0,10">
+                <Button Command="{Binding SaveChangeMeter_Command}" Style="{StaticResource BtnPopupSave}" WidthRequest="100"/>
+                <Button Command="{Binding CancelChangeMeter_Command}" Style="{StaticResource BtnPopupCancel}" WidthRequest="100"/>
+            </HorizontalStackLayout>
+
+
+
+        </Grid>
+        <!--END CHANGE METER GRID-->
+
+        <!--SIGNATURE GRID-->
+        <BoxView IsVisible="{Binding ViewSignature}" Style="{StaticResource BoxPopupBackgroundSOCl}"/>
+
+
+        <Grid x:Name="gridSign"
+IsVisible="{Binding ViewSignature}"
+BackgroundColor="Transparent"
+Padding="20"
+            Grid.ColumnSpan="3"
+VerticalOptions="Center"
+HorizontalOptions="Center"
+WidthRequest="{OnIdiom Tablet=600, Phone=340}"
+HeightRequest="{OnIdiom Tablet=450, Phone=300}"
+RowDefinitions="Auto, *, Auto">
+
+            <!-- FRAME + TITLE -->
+            <Border Style="{StaticResource BorderPopupBackground}" 
+        Grid.RowSpan="3"/>
+
+
+            <Label Text="Sign" Style="{StaticResource f9LblPopupTitle}"/>
+            <!--END-->
+
+            <Border Grid.Row="1" 
+        Margin="15" 
+        Stroke="Gray" 
+        StrokeThickness="1" 
+        BackgroundColor="White"
+        StrokeShape="Rectangle">
+                <toolkit:DrawingView x:Name="signaturePad"
+                         Lines="{Binding SignatureLines}"
+                         LineColor="Black"
+                         LineWidth="3"
+                         BackgroundColor="White"
+                                   
+                         IsMultiLineModeEnabled="True"
+                         ShouldClearOnFinish="False"/>
+            </Border>
+            
+            <!--SAVE + CANCEL BUTTONS-->
+            <StackLayout Orientation="Horizontal" Margin="{OnIdiom Tablet='10, 0, 10, 10', Phone='8, 0, 8, 8'}"
+                         HorizontalOptions="End" Grid.Row="2">
+
+                <!-- Clear Button (Left Aligned) -->
+                <Button Text="Clear"
+                        Clicked="OnClearSignatureClicked"
+                        Style="{StaticResource BtnPopupCancel}"
+                        BackgroundColor="Gray"
+                        WidthRequest="50"/>
+
+                <Button Command="{Binding SaveSignature_Command}" Style="{StaticResource BtnPopupSave}"/>
+                <Button Command="{Binding CancelSignature_Command}" Style="{StaticResource BtnPopupCancel}"/>
+            </StackLayout>
+            <!--END BUTTONS-->
+        </Grid>
+        <!--END SIGNATURE GRID-->
+
+        <!--METER DETAILS GRID-->
+        <BoxView Grid.ColumnSpan="3" IsVisible="{Binding ViewMeterDetails}" Style="{StaticResource BoxPopupBackgroundSOCl}"/>
+        <Grid Grid.ColumnSpan="3" x:Name="gridMeterDet" Style="{StaticResource GridPadding}"  IsVisible="{Binding ViewMeterDetails}" BackgroundColor="Transparent" Padding="8"
+              VerticalOptions="Center" HorizontalOptions="Center"  >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="{OnIdiom Tablet=4, Phone=2}"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="{OnIdiom Tablet=4, Phone=2}"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="{OnIdiom Tablet=4, Phone=2}"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+  
+            
+            <!--FRAME + TITLE-->
+            <Border Style="{StaticResource BorderPopupBackground}" Grid.ColumnSpan="6" Grid.RowSpan="8"/>
+            <Label Text="Meter Details" Style="{StaticResource f9LblPopupTitle}" Grid.ColumnSpan="6"/>
+            <!--END-->
+            <!-- Close button (top-right of popup) -->
+            <Button x:Name="btnMeterDetX" Command="{Binding OpenCloseMeterDetails_Command}" IsVisible="{Binding ViewMeterDetails}"
+ Style="{StaticResource BtnPopupXOut}" Margin="0,-20,-20,0" Grid.ColumnSpan="6"/>
+            
+            <!--END METER DETAILS GRID-->
+            <!--BOX VIEWS-->
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="1" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxValueLong}"  Grid.ColumnSpan="3" Grid.Column="2" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="1" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="2" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="3" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="4" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="1" Grid.Row="3"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="2" Grid.Row="3"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="3" Grid.Row="3"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="4" Grid.Row="3"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="1" Grid.Row="4"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="2" Grid.Row="4"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="3" Grid.Row="4"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="4" Grid.Row="4"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="1" Grid.Row="5"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="2" Grid.Row="5"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="3" Grid.Row="5"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="4" Grid.Row="5"/>
+            <!--END BOX VIEWS-->
+
+            <!--LABELS-->
+            <Label Text="Location:" Style="{StaticResource LblHeight}" Grid.Column="1" Grid.Row="1"/>
+            <Label Text="{Binding ServiceOrder.Meter.MeterLocation}" Style="{StaticResource LblLong}" Grid.ColumnSpan="3" Grid.Column="2" Grid.Row="1"/>
+            <Label Text="Meter #:" Style="{StaticResource LblHeight}" Grid.Column="1" Grid.Row="2"/>
+            <Label Text="{Binding ServiceOrder.Meter.MeterNum}" Style="{StaticResource Lbl}" Grid.Column="2" Grid.Row="2"/>
+            <Label Text="MXU #:" Style="{StaticResource LblHeight}" Grid.Column="3" Grid.Row="2"/>
+            <Label Text="{Binding ServiceOrder.Meter.MXUNum}" Style="{StaticResource Lbl}" Grid.Column="4" Grid.Row="2"/>
+            <Label Text="Last Reading:" Style="{StaticResource LblHeight}" Grid.Column="1" Grid.Row="3"/>
+            <Label Text="{Binding ServiceOrder.Meter.LastReading}" Style="{StaticResource LblHeight}" Grid.Column="2" Grid.Row="3"/>
+            <Label Text="Last Read Date:" Style="{StaticResource LblHeight}" Grid.Column="3" Grid.Row="3"/>
+            <Label Text="{Binding ServiceOrder.Meter.LastReadDate}" Style="{StaticResource LblHeight}" Grid.Column="4" Grid.Row="3"/>
+            <Label Text="Current Reading:" Style="{StaticResource LblHeight}" Grid.Column="1" Grid.Row="4"/>
+            <Entry Text="{Binding CurrentReadingEntry}" Style="{StaticResource EntrySOCl}" Keyboard="Numeric" Grid.Column="2" Grid.Row="4"/>
+            <Label Text="Backflow:" Style="{StaticResource LblHeight}" Grid.Column="3" Grid.Row="4"/>
+            <Grid Grid.Column="4" Grid.Row="4">
+                <Label Text="{Binding BackflowLabel}" TextColor="{StaticResource Primary}" FontSize="16" Margin="3, 1"
+                       VerticalTextAlignment="Center" HorizontalTextAlignment="Center" IsVisible="{OnIdiom Tablet=True, Phone=False}"/>
+                <Switch IsToggled="{Binding BackflowSwitch}" OnColor="{StaticResource Primary}" ThumbColor="{StaticResource PrimaryDkOffset}"
+                        VerticalOptions="Center" HorizontalOptions="Center" Grid.Column="{OnIdiom Tablet=1, Phone=0}"/>
+            </Grid>
+            <Label Text="Last Serviced:" Style="{StaticResource LblHeight}" Grid.Column="1" Grid.Row="5"/>
+            <Label Text="{Binding ServiceOrder.Meter.MeterLastServiceDate}" Style="{StaticResource LblHeight}" Grid.Column="2" Grid.Row="5"/>
+            <Label Text="Install Date:" Style="{StaticResource LblHeight}" Grid.Column="3" Grid.Row="5"/>
+            <Label Text="{Binding ServiceOrder.Meter.MeterInstallDate}" Style="{StaticResource LblHeight}" Grid.Column="4" Grid.Row="5"/>
+            <!--END LABELS-->
+        </Grid>
+     
+    </Grid>
+    <!--END OUTER GRID-->
+</ContentPage>

@@ -1,0 +1,77 @@
+# EasyReader - iOS cloud build (no Mac required)
+# Service: Codemagic (macOS M2/M4 cloud, Bitbucket-connected)
+# Cost: 500 free macOS minutes/month, then ~$0.095/min M2. No runner to maintain.
+#
+# Setup (one-time in Codemagic UI):
+#   1. codemagic.io > Add app > Bitbucket > select easy-reader repo
+#   2. Team settings > Integrations > Apple Developer Portal > Connect
+#      (grants automatic cert + provisioning profile creation)
+#      OR manually upload in App settings > Code signing:
+#        - Distribution .p12 (Apple Distribution) + password
+#        - Provisioning profile for com.creativetechusa.easyreader (App Store)
+#   3. Team settings > Integrations > App Store Connect API > Add key
+#      (Key ID + Issuer ID + .p8). Name it e.g. "codemagic-api".
+#      Used below as `app_store_connect: codemagic-api` for TestFlight upload.
+#   4. Push this file to Bitbucket main, then Codemagic > Start build > maui-ios
+#
+# What it builds (matches repo, Android untouched):
+#   EasyReader/EasyReader.csproj, -f net10.0-ios, Release, ios-arm64
+#   Bundle: com.creativetechusa.easyreader, version from csproj (2.1.17 / 2117)
+
+workflows:
+  maui-ios:
+    name: MAUI iOS IPA
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: codemagic-api
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.creativetechusa.easyreader
+      vars:
+        DOTNET_PATH: $CM_BUILD_DIR/dotnet
+        DOTNET: $CM_BUILD_DIR/dotnet/dotnet
+        BUNDLE_ID: com.creativetechusa.easyreader
+        PROJECT_PATH: EasyReader/EasyReader.csproj
+        FRAMEWORK: net10.0-ios
+      xcode: latest
+    scripts:
+      - name: Install .NET 10 SDK
+        script: |
+          wget https://dot.net/v1/dotnet-install.sh
+          chmod +x dotnet-install.sh
+          ./dotnet-install.sh --channel 10.0 --install-dir $DOTNET_PATH
+          $DOTNET --info
+      - name: Install MAUI workloads
+        script: |
+          $DOTNET nuget locals all --clear
+          $DOTNET workload install maui
+      - name: Restore
+        script: |
+          $DOTNET restore $PROJECT_PATH -p:TargetFrameworks=$FRAMEWORK
+      - name: Publish signed IPA
+        script: |
+          CERT_NAME=$(keychain list-certificates | jq -r '.[] | .common_name' | head -1)
+          echo "Cert: $CERT_NAME"
+          PROFILE_NAME=$(find ~/Library/MobileDevice/Provisioning\ Profiles -name "*.mobileprovision" -execdir sh -c '/usr/libexec/PlistBuddy -c "print :Name" /dev/stdin <<< $(security cms -D -i {})' \; | head -1)
+          echo "Profile: $PROFILE_NAME"
+          test -n "$CERT_NAME" || (echo "No signing certificate found"; exit 1)
+          test -n "$PROFILE_NAME" || (echo "No provisioning profile found"; exit 1)
+          $DOTNET publish $PROJECT_PATH \
+            -f $FRAMEWORK \
+            -c Release \
+            -p:TargetFrameworks=$FRAMEWORK \
+            -p:RuntimeIdentifier=ios-arm64 \
+            -p:ArchiveOnBuild=true \
+            -p:BuildIpa=true \
+            -p:ApplicationId=$BUNDLE_ID \
+            -p:CodesignKey="$CERT_NAME" \
+            -p:CodesignProvision="$PROFILE_NAME" \
+            -o $CM_BUILD_DIR/artifacts
+    artifacts:
+      - artifacts/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

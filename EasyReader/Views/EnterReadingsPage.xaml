@@ -1,0 +1,360 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://schemas.microsoft.com/dotnet/2021/maui/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodel="clr-namespace:EasyReader.ViewModels"
+             xmlns:local="clr-namespace:EasyReader.Views"
+             mc:Ignorable="d"
+             x:Class="EasyReader.Views.EnterReadingsPage"
+             BackgroundColor="White">
+
+    <!-- VIEW MODEL + TITLE VIEW + TOOLBAR-->
+    <ContentPage.BindingContext>
+        <viewmodel:EnterReadingsViewModel/>
+    </ContentPage.BindingContext>
+    <Shell.TitleView>
+        <Label Text="{OnIdiom Tablet='Enter Readings', Phone='Readings'}" Style="{StaticResource LblTitleView}"/>
+    </Shell.TitleView>
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Home" Command="{Binding GoTo_MainPage_Command}" Order="Primary" Priority="0"/>
+        <ToolbarItem Command="{Binding GoTo_SearchPage_Command}"
+                     Text="{OnIdiom Phone='Search'}" IconImageSource="{OnIdiom Tablet='searchAccounts.png'}" 
+                     Order="{OnIdiom Tablet=Primary, Phone=Secondary}" Priority="{OnIdiom Tablet=1, Phone=0}"/>
+        <ToolbarItem Command="{Binding GoTo_SettingsPage_Command}"
+                     Text="{OnIdiom Phone='Settings'}" IconImageSource="{OnIdiom Tablet='settings.png'}" 
+                     Order="{OnIdiom Tablet=Primary, Phone=Secondary}" Priority="{OnIdiom Tablet=2, Phone=1}"/>
+    </ContentPage.ToolbarItems>
+    <!--END-->
+
+    <!--RESOURCES-->
+    <ContentPage.Resources>
+        <Style x:Key="BoxNameER" TargetType="BoxView">
+            <Setter Property="BackgroundColor" Value="{StaticResource PrimaryDkOffset}"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+        <!-- Icon grid buttons style: rounded, light-gray background, consistent size -->
+        <Style x:Key="IconGridButton" TargetType="ImageButton">
+            <!-- Match the provided design: slightly darker rounded rectangle and white stroked icons centered -->
+            <Setter Property="BackgroundColor" Value="#bdbdbd" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="10" />
+            <Setter Property="HeightRequest" Value="56" />
+            <Setter Property="Aspect" Value="AspectFit" />
+       
+            <Setter Property="VerticalOptions" Value="Fill" />
+            <Setter Property="HorizontalOptions" Value="Fill" />
+        </Style>
+        <Style x:Key="BoxValueER" TargetType="BoxView">
+            <Setter Property="BackgroundColor" Value="{StaticResource PrimaryLtOffset}"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+        <Style x:Key="BoxValueLongER" TargetType="BoxView">
+            <Setter Property="BackgroundColor" Value="{StaticResource PrimaryLtOffset}"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Grid.ColumnSpan" Value="3"/>
+        </Style>
+        <Style x:Key="LblER" TargetType="Label">
+            <Setter Property="TextColor" Value="Black"/>
+            <Setter Property="FontSize" Value="{OnIdiom Tablet=15, Phone=10}"/>
+            <Setter Property="Margin" Value="5, 1"/>
+            <!--<Setter Property="HeightRequest" Value="24"/>-->
+            <Setter Property="VerticalTextAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="LblLongER" TargetType="Label">
+              <Setter Property="TextColor" Value="Black"/>
+            <Setter Property="FontSize" Value="{OnIdiom Tablet=15, Phone=10}"/>
+            <Setter Property="Margin" Value="5, 1"/>
+            <!--<Setter Property="HeightRequest" Value="24"/>-->
+            <Setter Property="VerticalTextAlignment" Value="Center"/>
+            <Setter Property="Grid.ColumnSpan" Value="3"/>
+        </Style>
+        <Style x:Key="BtnActionER" TargetType="Button">
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="Margin" Value="0, 6"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalOptions" Value="FillAndExpand"/>
+            <Setter Property="HeightRequest" Value="48"/>
+            <Setter Property="FontAttributes" Value="Bold"/>
+        </Style>
+        <Style x:Key="BoxNewUsageName" TargetType="BoxView">
+            <Setter Property="BackgroundColor" Value="{StaticResource PrimaryDkOffset}"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Grid.Row" Value="0"/>
+        </Style>
+        <Style x:Key="BoxNewUsageValue" TargetType="BoxView">
+            <Setter Property="BackgroundColor" Value="{StaticResource PrimaryLtOffset}"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Grid.Row" Value="1"/>
+        </Style>
+        <Style x:Key="LblNewUsage" TargetType="Label">
+            <Setter Property="TextColor" Value="Black"/>
+            <Setter Property="FontSize" Value="{OnIdiom Tablet=15, Phone=10}"/>
+            <Setter Property="Margin" Value="5, 1"/>
+            <Setter Property="VerticalTextAlignment" Value="Center"/>
+            <Setter Property="HorizontalTextAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="BtnNumPad" TargetType="Button">
+            <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="FontSize" Value="{OnIdiom Tablet=25, Phone=15}"/>
+            <Setter Property="FontAttributes" Value="Bold"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Padding" Value="2"/>
+            <Setter Property="VerticalOptions" Value="Fill"/>
+        </Style>
+    </ContentPage.Resources>
+    <!--END RESOURCES-->
+
+    <!--OUTER GRID-->
+    <Grid x:Name="outerGrid" ColumnDefinitions="*"  Style= "{StaticResource GridPadding}" RowDefinitions="3*,*,0.7*" RowSpacing="10">
+    
+        <!--INNER GRID-->
+        <Grid x:Name="innerGrid" Grid.Row="0"  RowSpacing="4" ColumnSpacing="4" >
+            <!-- four columns: label, value, label, value -->
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!--BOX VIEWS-->
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="0" Grid.Row="0"/>
+            <BoxView Style="{StaticResource BoxValueER}" Grid.Column="1" Grid.Row="0"/>
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="2" Grid.Row="0"/>
+            <BoxView Style="{StaticResource BoxValueER}" Grid.Column="3" Grid.Row="0"/>
+            <!--<BoxView Style="{StaticResource BoxValueLongER}" Grid.Column="1" Grid.Row="0"/>-->
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="0" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxValueER}" Grid.Column="1" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="2" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxValueER}" Grid.Column="3" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="0" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxValueER}" Grid.Column="1" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="2" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxValueER}" Grid.Column="3" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="0" Grid.Row="3"/>
+            <BoxView Style="{StaticResource BoxValueLongER}" Grid.Column="1" Grid.Row="3"/>
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="0" Grid.Row="4"/>
+            <BoxView Style="{StaticResource BoxValueLongER}" Grid.Column="1" Grid.Row="4"/>
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="0" Grid.Row="5"/>
+            <BoxView Style="{StaticResource BoxValueER}" Grid.Column="1" Grid.Row="5"/>
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="2" Grid.Row="5"/>
+            <BoxView Style="{StaticResource BoxValueER}" Grid.Column="3" Grid.Row="5"/>
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="0" Grid.Row="6"/>
+            <BoxView Style="{StaticResource BoxValueER}" Grid.Column="1" Grid.Row="6"/>
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="2" Grid.Row="6"/>
+            <BoxView Style="{StaticResource BoxValueER}" Grid.Column="3" Grid.Row="6"/>
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="0" Grid.Row="7"/>
+            <BoxView Style="{StaticResource BoxValueER}" Grid.Column="1" Grid.Row="7"/>
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="2" Grid.Row="7"/>
+            <BoxView Style="{StaticResource BoxValueER}" Grid.Column="3" Grid.Row="7"/>
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="0" Grid.Row="8"/>
+            <BoxView Style="{StaticResource BoxValueER}" Grid.Column="1" Grid.Row="8"/>
+            <BoxView Style="{StaticResource BoxValueER}" Grid.Column="2" Grid.Row="8"/>
+            <BoxView Style="{StaticResource BoxValueER}" Grid.Column="3" Grid.Row="8"/>
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="0" Grid.Row="9"/>
+            <BoxView Style="{StaticResource BoxValueLongER}" Grid.Column="1" Grid.Row="9"/>
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="0" Grid.Row="10"/>
+            <BoxView Style="{StaticResource BoxValueER}" Grid.Column="1" Grid.Row="10"/>
+            <BoxView Style="{StaticResource BoxNameER}" Grid.Column="2" Grid.Row="10"/>
+            <BoxView Style="{StaticResource BoxValueER}" Grid.Column="3" Grid.Row="10"/>
+            <!--END BOX VIEWS-->
+
+            <!--ACCOUNT LABELS-->
+            <Label Text="Name:" Style="{StaticResource LblER}" Grid.Column="0" Grid.Row="0"/>
+            <Label Text="{Binding Account.Name}" Style="{StaticResource LblER}" Grid.Column="1" Grid.Row="0"/>
+            <Label Text="Premise:" Style="{StaticResource LblER}" Grid.Column="2" Grid.Row="0"/>
+            <Label Text="{Binding Account.Premise}" Style="{StaticResource LblER}" Grid.Column="3" Grid.Row="0"/>
+            <!--<Label Text="{Binding Account.Name}" Style="{StaticResource LblLongER}" Grid.Column="1" Grid.Row="0"/>-->
+            <Label Text="Route:" Style="{StaticResource LblER}" Grid.Column="0" Grid.Row="1"/>
+            <Label Text="{Binding Account.Route}" Style="{StaticResource LblER}" Grid.Column="1" Grid.Row="1"/>
+            <Label Text="{OnIdiom Tablet='Walk Seq:', Phone='Seq:'}" Style="{StaticResource LblER}" Grid.Column="2" Grid.Row="1"/>
+            <Label Text="{Binding Account.WalkSequence}" Style="{StaticResource LblER}" Grid.Column="3" Grid.Row="1"/>
+            <Label Text="Account #:" Style="{StaticResource LblER}" Grid.Column="0" Grid.Row="2"/>
+            <Label Text="{Binding Account.AccountNumber}" Style="{StaticResource LblER}" Grid.Column="1" Grid.Row="2"/>
+            <Label Text="Meter #:" Style="{StaticResource LblER}" Grid.Column="2" Grid.Row="2"/>
+            <Label Text="{Binding Account.MeterNumber}" Style="{StaticResource LblER}" Grid.Column="3" Grid.Row="2"/>
+            <Label Text="Address:" Style="{StaticResource LblER}" Grid.Column="0" Grid.Row="3"/>
+            <Label Text="{Binding Account.Address}" Style="{StaticResource LblLongER}" Grid.Column="1" Grid.Row="3"/>
+            <Label Text="Location:" Style="{StaticResource LblER}" Grid.Column="0" Grid.Row="4"/>
+            <Label Text="{Binding Account.Location}" Style="{StaticResource LblLongER}" Grid.Column="1" Grid.Row="4"/>
+            <Label Text="{Binding Misc1Label}" Style="{StaticResource LblER}" Grid.Column="0" Grid.Row="5"/>
+            <Label Text="{Binding Account.Misc1}" Style="{StaticResource LblER}" Grid.Column="1" Grid.Row="5"/>
+            <Label Text="Utility:" Style="{StaticResource LblER}" Grid.Column="2" Grid.Row="5"/>
+            <Label Text="{Binding Account.Utility}" Style="{StaticResource LblER}" Grid.Column="3" Grid.Row="5"/>
+            <Label Text="{OnIdiom Tablet='Last Reading:', Phone='Last:'}" Style="{StaticResource LblER}" Grid.Column="0" Grid.Row="6"/>
+            <Label Text="{Binding Account.LastReading}" Style="{StaticResource LblER}" Grid.Column="1" Grid.Row="6"/>
+            <Label Text="Date:" Style="{StaticResource LblER}" Grid.Column="2" Grid.Row="6"/>
+            <Label Text="{Binding Account.LastReadDate}" Style="{StaticResource LblER}" Grid.Column="3" Grid.Row="6"/>
+            <Label Text="{OnIdiom Tablet='Avg. Usage:', Phone='Avg.:'}" Style="{StaticResource LblER}" Grid.Column="0" Grid.Row="7"/>
+            <Label Text="{Binding Account.AvgUsage}" Style="{StaticResource LblER}" Grid.Column="1" Grid.Row="7"/>
+            <Label Text="{OnIdiom Tablet='New Usage:', Phone='Usage:'}" Style="{StaticResource LblER}" Grid.Column="2" Grid.Row="7"/>
+            <Label Text="{Binding Account.NewUsage}" Style="{StaticResource LblER}" Grid.Column="3" Grid.Row="7"/>
+            <Label Text="New Reading:" Style="{StaticResource LblER}" Grid.Column="0" Grid.Row="8"/>
+            <Label Text="{Binding Account.NewReading}" Style="{StaticResource LblER}" Grid.Column="1" Grid.Row="8"/>
+            <Label Text="{Binding Account.NewReadDate}" Style="{StaticResource LblER}" Grid.Column="2" Grid.Row="8"/>
+            <Label Text="{Binding Account.NewReadTime}" Style="{StaticResource LblER}" Grid.Column="3" Grid.Row="8"/>
+            <Label Text="Notes:" Style="{StaticResource LblER}" Grid.Column="0" Grid.Row="9"/>
+            <Label Text="{Binding Account.Notes}" Style="{StaticResource LblLongER}" Grid.Column="1" Grid.Row="9"/>
+            <Label Text="{OnIdiom Tablet='Missing Status:', Phone='Missing:'}" Style="{StaticResource LblER}" Grid.Column="0" Grid.Row="10"/>
+            <Label Text="{Binding MissingReadingsStatusLabel}" Style="{StaticResource LblER}" Grid.Column="1" Grid.Row="10"/>
+            <Label Text="Missing Only:" Style="{StaticResource LblER}" Grid.Column="2" Grid.Row="10"/>
+            <Grid Grid.Column="3" Grid.Row="10">
+                <Label Text="{Binding MissingOnlyLabel}" TextColor="{StaticResource Primary}" FontSize="16" Margin="3, 1"
+                       VerticalTextAlignment="Center" HorizontalTextAlignment="Center" IsVisible="{OnIdiom Tablet=True, Phone=False}"/>
+                <Switch IsToggled="{Binding MissingOnlySwitch}" OnColor="{StaticResource Primary}" ThumbColor="{StaticResource PrimaryDkOffset}"
+                        VerticalOptions="Center" HorizontalOptions="Center" Grid.Column="{OnIdiom Tablet=1, Phone=0}"/>
+            </Grid>
+            <!--END ACCOUNT LABELS-->
+
+        </Grid>
+        <!--END INNER GRID-->
+
+        <!--ENTER, CLEAR + LAST ENTERED BUTTONS-->
+        <Grid x:Name="gridActions"  RowSpacing="15" Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Button x:Name="btnEnter" Text="Enter Reading" Command="{Binding OpenNumPad_Command}" Style="{StaticResource BtnActionER}" BackgroundColor="Green" Grid.Row="0" Grid.Column="0"/>
+            <Button x:Name="btnLast" Text="Go To Last Entered" Command="{Binding LastEnteredAccount_Command}" Style="{StaticResource BtnActionER}" BackgroundColor="{StaticResource Primary}" Grid.Row="1" Grid.Column="0"/>
+            <Button x:Name="btnClear" Text="Clear New Reading" Command="{Binding ClearNewReading_Command}" Style="{StaticResource BtnActionER}" BackgroundColor="Red" Grid.Row="2" Grid.Column="0"/>
+        </Grid>
+        <!--END ENTER, CLEAR + LAST ENTERED BUTTONS-->
+
+        <!--CHANGE ACCOUNT + SPECIAL FUNCTION BUTTONS-->
+        <Grid x:Name="FunctionsBtns" RowDefinitions="*,*" ColumnDefinitions="*,*,*,*" Grid.Row="2" RowSpacing="5" ColumnSpacing="5" >
+
+            <!--CHANGE ACCOUNT BUTTONS-->
+            <ImageButton Source="first.png" Command="{Binding FirstAccount_Command}"
+    Style="{StaticResource ImgBtnBotBtns}" Grid.Column="0" Grid.Row="0"/>
+            <ImageButton Source="previous.png" Command="{Binding PreviousAccount_Command}"
+    Style="{StaticResource ImgBtnBotBtns}" Grid.Column="1" Grid.Row="0"/>
+            <ImageButton Source="next.png" Command="{Binding NextAccount_Command}"
+    Style="{StaticResource ImgBtnBotBtns}" Grid.Column="2" Grid.Row="0" />
+            <ImageButton Source="last.png" Command="{Binding LastAccount_Command}"
+    Style="{StaticResource ImgBtnBotBtns}" Grid.Column="3" Grid.Row="0"/>
+
+            <!--SPECIAL FUNCTION BUTTONS-->
+            <ImageButton Source="enternote.png" Command="{Binding GoTo_NotesPage_Command}"
+    Style="{StaticResource ImgBtnBotBtns}" Grid.Column="0" Grid.Row="1"/>
+            <ImageButton Source="takephoto.png" Command="{Binding TakeSavePhoto_Command}"
+    Style="{StaticResource ImgBtnBotBtns}" Grid.Column="1" Grid.Row="1"/>
+            <ImageButton Source="findroute.png" Command="{Binding OpenMaps_Command}"
+    Style="{StaticResource ImgBtnBotBtns}" Grid.Column="2" Grid.Row="1"/>
+            <ImageButton Source="maplocation.png" Command="{Binding SaveCurrentLocation_Command}"
+    Style="{StaticResource ImgBtnBotBtns}" Grid.Column="3" Grid.Row="1"/>
+
+        </Grid>
+
+
+        <!--END BOTTOM BUTTONS GRID-->
+        <!--END CHANGE ACCOUNT + SPECIAL FUNCTION BUTTONS-->
+        <!--NUM PAD GRID-->
+        <BoxView x:Name="overlayBox" BackgroundColor="#ac000000" IsVisible="{Binding ViewNumPad}" Grid.ColumnSpan="3" Grid.RowSpan="3"/>
+        <Grid x:Name="numPadPopup" IsVisible="{Binding ViewNumPad}" BackgroundColor="Transparent" ColumnDefinitions="*,*" RowDefinitions="3*,3*,7*" Padding="10" Grid.Column="0" Grid.ColumnSpan="3" Grid.RowSpan="3" Grid.Row="0">
+
+            <!--FRAME / BORDER FOR POPUP (use Border so stroke is visible) -->
+            <Border Style="{StaticResource BorderPopupBackground}" Grid.RowSpan="3" Grid.ColumnSpan="2" />
+            <!--END-->
+
+            <!--USAGE GRID-->
+            <Grid x:Name="usageGrid" Grid.Column="1" Style="{StaticResource GridPadding}" Grid.RowSpan="2" >
+                <!-- 5 small columns for the usage summary -->
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <BoxView Style="{StaticResource BoxNewUsageName}" Grid.Column="0"/>
+                <Label Text="Last Reading" Style="{StaticResource LblNewUsage}" Grid.Column="0" Grid.Row="0"/>
+                <BoxView Style="{StaticResource BoxNewUsageValue}" Grid.Column="0"/>
+                <Label Text="{Binding Account.LastReading}" Style="{StaticResource LblNewUsage}" Grid.Column="0" Grid.Row="1"/>
+
+                <BoxView Style="{StaticResource BoxNewUsageName}" Grid.Column="1"/>
+                <Label Text="Avg. Usage" Style="{StaticResource LblNewUsage}" Grid.Column="1" Grid.Row="0"/>
+                <BoxView Style="{StaticResource BoxNewUsageValue}" Grid.Column="1"/>
+                <Label Text="{Binding Account.AvgUsage}" Style="{StaticResource LblNewUsage}" Grid.Column="1" Grid.Row="1"/>
+
+                <BoxView Style="{StaticResource BoxNewUsageName}" Grid.Column="2"/>
+                <Label Text="New Usage" Style="{StaticResource LblNewUsage}" Grid.Column="2" Grid.Row="0"/>
+                <BoxView Style="{StaticResource BoxNewUsageValue}" Grid.Column="2"/>
+                <Label Text="{Binding NewUsageLabel}" Style="{StaticResource LblNewUsage}" Grid.Column="2" Grid.Row="1"/>
+
+                <BoxView Style="{StaticResource BoxNewUsageName}" Grid.Column="3"/>
+                <Label Text="New vs. Avg." Style="{StaticResource LblNewUsage}" Grid.Column="3" Grid.Row="0"/>
+                <BoxView Style="{StaticResource BoxNewUsageValue}" Grid.Column="3"/>
+                <Label Text="{Binding VsAvgUsageLabel}" Style="{StaticResource LblNewUsage}" Grid.Column="3" Grid.Row="1"/>
+
+                <BoxView Style="{StaticResource BoxNewUsageName}" Grid.Column="4"/>
+                <Label Text="Balance" Style="{StaticResource LblNewUsage}" Grid.Column="4" />
+                <BoxView Style="{StaticResource BoxNewUsageValue}" Grid.Column="4"/>
+                <Label Text="{Binding Account.Balance}" Style="{StaticResource LblNewUsage}" Grid.Column="4" Grid.Row="1"/>
+            </Grid>
+            <!--END USAGE GRID-->
+
+            <!--NEW READING LABEL-->
+            <Frame x:Name="frameNewReadingPopup" BorderColor="{StaticResource PrimaryDkOffset}" BackgroundColor="{StaticResource PrimaryLtOffset}" HasShadow="False"
+                   CornerRadius="5" Margin="{OnIdiom Tablet='10, 0', Phone='8, 10'}"  Grid.Row="1"/>
+            <Label x:Name="lblNewReadingPopup" Text="{Binding NewReadingLabel}" TextColor="{StaticResource Primary}" FontSize="30" FontAttributes="Bold"
+                   VerticalTextAlignment="Center" HorizontalTextAlignment="Center" Margin="{OnIdiom Tablet='10, 0', Phone='8, 0'}" Grid.Row="1"/>
+            <!--END NEW READING LABEL-->
+
+            <!--NUM PAD BUTTONS GRID-->
+            <Grid x:Name="numPadButtonsGrid" Style="{StaticResource GridPadding}"  Grid.Row="2" >
+                <!-- keypad layout -->
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Button Text="1" Command="{Binding Btn1_Command}" Style="{StaticResource BtnNumPad}" Grid.Column="0" Grid.Row="0"/>
+                <Button Text="2" Command="{Binding Btn2_Command}" Style="{StaticResource BtnNumPad}" Grid.Column="1" Grid.Row="0"/>
+                <Button Text="3" Command="{Binding Btn3_Command}" Style="{StaticResource BtnNumPad}" Grid.Column="2" Grid.Row="0"/>
+                <Button Text="4" Command="{Binding Btn4_Command}" Style="{StaticResource BtnNumPad}" Grid.Column="0" Grid.Row="1"/>
+                <Button Text="5" Command="{Binding Btn5_Command}" Style="{StaticResource BtnNumPad}" Grid.Column="1" Grid.Row="1"/>
+                <Button Text="6" Command="{Binding Btn6_Command}" Style="{StaticResource BtnNumPad}" Grid.Column="2" Grid.Row="1"/>
+                <Button Text="7" Command="{Binding Btn7_Command}" Style="{StaticResource BtnNumPad}" Grid.Column="0" Grid.Row="2"/>
+                <Button Text="8" Command="{Binding Btn8_Command}" Style="{StaticResource BtnNumPad}" Grid.Column="1" Grid.Row="2"/>
+                <Button Text="9" Command="{Binding Btn9_Command}" Style="{StaticResource BtnNumPad}" Grid.Column="2" Grid.Row="2"/>
+                <Button Text="Clear" Command="{Binding ClearNumPad_Command}" Style="{StaticResource BtnNumPad}" BackgroundColor="Red" Grid.Column="0" Grid.Row="3"/>
+                <Button Text="0" Command="{Binding Btn0_Command}" Style="{StaticResource BtnNumPad}" Grid.Column="1" Grid.Row="3"/>
+                <Button Text="Save" Command="{Binding SaveNewReading_Command}" Style="{StaticResource BtnNumPad}" BackgroundColor="{Binding SaveReadingBtnColor}" Grid.Column="2" Grid.Row="3"/>
+            </Grid>
+            <!--END NUM PAD BUTTONS GRID-->
+        </Grid>
+        <Button x:Name="btnCloseNumPad" Command="{Binding CloseNumPad_Command}" IsVisible="{Binding ViewNumPad}" Style="{StaticResource BtnPopupXOut}" Grid.Column="3" VerticalOptions="Start" Grid.Row="0"/>
+        <!--END NUM PAD GRID-->
+    </Grid>
+</ContentPage>

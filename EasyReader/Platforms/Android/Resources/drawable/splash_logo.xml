@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="80dp"
+    android:viewportWidth="200"
+    android:viewportHeight="80">
+  <!-- placeholder centered logo: simple text-like shape or block -->
+  <path android:fillColor="#FFFFFFFF" android:pathData="M0,0h200v80h-200z" />
+</vector>

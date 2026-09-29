@@ -1,0 +1,111 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodel="clr-namespace:EasyReader.ViewModels"
+             mc:Ignorable="d"
+             x:Class="EasyReader.Views.SOFilesPage"
+             BackgroundColor="White">
+
+    <!-- VIEW MODEL + TITLE VIEW + TOOLBAR-->
+    <ContentPage.BindingContext>
+        <viewmodel:SOFilesViewModel/>
+    </ContentPage.BindingContext>
+    <Shell.TitleView>
+        <Label Text="{OnIdiom Tablet='Service Order Files', Phone='SO Files'}" Style="{StaticResource LblTitleView}"/>
+    </Shell.TitleView>
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Home" Command="{Binding GoTo_MainPage_Command}" Order="Primary" Priority="0"/>
+    </ContentPage.ToolbarItems>
+    <!--END-->
+
+    <Grid x:Name="gridOuter" ColumnDefinitions="*" RowDefinitions="*,2*"> 
+
+        <Grid Style="{StaticResource GridPadding}" ColumnDefinitions="*,*,*,*">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!--BOX VIEWS-->
+            <BoxView Style="{StaticResource BoxName}"  Grid.Column="0" Grid.Row="0"/>
+            <BoxView Style="{StaticResource BoxValueLong}" Grid.ColumnSpan="3" Grid.Column="1" Grid.Row="0"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="2" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="3" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="2" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="3" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="3"/>
+            <BoxView Style="{StaticResource BoxValueLong}"  Grid.ColumnSpan="3" Grid.Column="1" Grid.Row="3"/>
+            <!--END BOX VIEWS-->
+
+            <!--LABELS-->
+            <Label Text="Name:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="0"/>
+            <Label Text="{Binding ServiceOrder.Customer.CustomerName}" Style="{StaticResource LblLong}" Grid.Column="1" Grid.Row="0"/>
+            <Label Text="Route:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="1"/>
+            <Label Text="{Binding ServiceOrder.Meter.Route}" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="1"/>
+            <Label Text="Walk Seq:" Style="{StaticResource Lbl}" Grid.Column="2" Grid.Row="1"/>
+            <Label Text="{Binding ServiceOrder.Meter.ReadSequence}" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="1"/>
+            <Label Text="Account #:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="2"/>
+            <Label Text="{Binding ServiceOrder.Customer.Accountnum}" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="2"/>
+            <Label Text="SO #:" Style="{StaticResource Lbl}" Grid.Column="2" Grid.Row="2"/>
+            <Label Text="{Binding ServiceOrder.SONum}" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="2"/>
+            <Label Text="Address:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="3"/>
+            <Label Text="{Binding ServiceOrder.Meter.ServiceAddress}" Style="{StaticResource LblLong}" Grid.Column="1" Grid.Row="3"/>
+            <!--END LABELS-->
+
+         
+        </Grid>
+        <Grid Style="{StaticResource GridPadding}" Grid.Column="1" Grid.Row="1" ColumnDefinitions="*,*,*,*" RowDefinitions="Auto,Auto,*,auto">
+            <!--FRAME + TITLE-->
+            <Frame BorderColor="{StaticResource PrimaryDkOffset}" BackgroundColor="Transparent" Padding="10"
+      CornerRadius="10" HasShadow="False" Grid.ColumnSpan="4" Grid.Row="0" Grid.RowSpan="3" />
+            <Label Text="SO Files" Style="{StaticResource f9LblPopupTitle}" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="0"/>
+            <!--END-->
+
+            <!--FILE ACTIONS GRID-->
+            <Grid  Style="{StaticResource GridPadding}" RowDefinitions="*" ColumnDefinitions="*,*,*,*,*" Grid.ColumnSpan="4" Grid.Row="1">
+                <StackLayout Orientation="{OnIdiom Tablet=Vertical, Phone=Horizontal}" Spacing="0" Grid.Column="0">
+                    <CheckBox IsChecked="{Binding SelectAllFiles}" Color="{StaticResource Primary}" Margin="{OnIdiom Tablet='5, 0', Phone='0'}"
+                 VerticalOptions="{OnIdiom Tablet=End, Phone=Center}" HorizontalOptions="Center"/>
+                    <Label Text="All" TextColor="Black" FontSize="Micro" Margin="5, 0" HorizontalTextAlignment="Center" VerticalTextAlignment="Center"/>
+                </StackLayout>
+                <!--box views needed for ios-->
+                <BoxView Style="{StaticResource BoxAcntFileAction}" Grid.Column="1"/>
+                <Button Text="Open" Command="{Binding OpenSOFile_Command}" Style="{StaticResource f9BtnAcntFileAction}" Grid.Column="1"/>
+                <BoxView Style="{StaticResource BoxAcntFileAction}" Grid.Column="2"/>
+                <Button Text="Rename" Command="{Binding RenameSOFile_Command}" Style="{StaticResource f9BtnAcntFileAction}" Grid.Column="2"/>
+                <BoxView Style="{StaticResource BoxAcntFileAction}" Grid.Column="3"/>
+                <Button Text="Delete" Command="{Binding DeleteSOFiles_Command}" Style="{StaticResource f9BtnAcntFileAction}" Grid.Column="3"/>
+                <BoxView Style="{StaticResource BoxAcntFileAction}" Grid.Column="4"/>
+                <Button Text="Email" Command="{Binding SendSOFiles_Command}" Style="{StaticResource f9BtnAcntFileAction}" Grid.Column="4"/>
+            </Grid>
+            <!--END FILE ACTIONS GRID-->
+
+            <!--FILES LIST-->
+            <ListView ItemsSource="{Binding SOFilesOC}" SelectionMode="None" BackgroundColor="Transparent"
+         Margin="15, 0, 15, 15" Grid.ColumnSpan="4" Grid.Row="2">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <ViewCell Tapped="SOViewCellTapped">
+                            <Grid ColumnDefinitions="35, *">
+                                <CheckBox IsChecked="{Binding IsSelected}" Color="{StaticResource Primary}" Margin="5, 0"
+                             VerticalOptions="Center" HorizontalOptions="Center" Grid.Column="0"/>
+                                <Label Text="{Binding Name}" TextColor="{StaticResource Primary}"
+                          VerticalTextAlignment="Center" HorizontalTextAlignment="Start" Grid.Column="1"/>
+                            </Grid>
+                        </ViewCell>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+            <!--END FILES LIST-->
+        </Grid>
+    </Grid>
+</ContentPage>

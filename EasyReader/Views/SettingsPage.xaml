@@ -1,0 +1,196 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://schemas.microsoft.com/dotnet/2021/maui/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodel="clr-namespace:EasyReader.ViewModels"
+             xmlns:local="clr-namespace:EasyReader.Views"
+             mc:Ignorable="d"
+             x:Class="EasyReader.Views.SettingsPage"
+             BackgroundColor="White">
+
+    <!-- VIEW MODEL + TITLE VIEW + TOOLBAR-->
+    <ContentPage.BindingContext>
+        <viewmodel:SettingsViewModel/>
+    </ContentPage.BindingContext>
+    <Shell.TitleView>
+        <Label Text="Settings" Style="{StaticResource LblTitleView}"/>
+    </Shell.TitleView>
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Home" Command="{Binding GoTo_MainPage_Command}" Order="Primary" Priority="0"/>
+    </ContentPage.ToolbarItems>
+    <!--END-->
+
+    <!--RESOURCES-->
+    <ContentPage.Resources>
+        <Style x:Key="EntrySettings" TargetType="Entry">
+            <Setter Property="BackgroundColor" Value="Transparent"/>
+            <Setter Property="TextColor" Value="Black"/>
+            <Setter Property="FontSize" Value="{OnIdiom Tablet=16, Phone=13}"/>
+            <Setter Property="HeightRequest" Value="44"/>
+            <Setter Property="VerticalTextAlignment" Value="{OnPlatform Android=End, iOS=Center}"/>
+            <Setter Property="HorizontalTextAlignment" Value="Start"/>
+            <Setter Property="Grid.Column" Value="1"/>
+            <Setter Property="Margin" Value="0,6,0,6"/>
+        </Style>
+        <Style x:Key="FrameSettings" TargetType="Frame">
+            <Setter Property="BorderColor" Value="{StaticResource PrimaryDkOffset}"/>
+            <Setter Property="BackgroundColor" Value="White"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="HasShadow" Value="False"/>
+        </Style>
+        <Style x:Key="ChkBox" TargetType="CheckBox">
+            <Setter Property="Color" Value="{StaticResource Primary}"/>
+            <Setter Property="HorizontalOptions" Value="Center"/>
+            <Setter Property="Grid.Column" Value="0"/>
+        </Style>
+        <Style x:Key="LblChkBox" TargetType="Label">
+            <Setter Property="TextColor" Value="Black"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="HorizontalOptions" Value="Start"/>
+            <Setter Property="VerticalOptions" Value="Center"/>
+            <Setter Property="Grid.Column" Value="1"/>
+        </Style>
+        <ColumnDefinitionCollection x:Key="ColumnsSettings">
+            <ColumnDefinition Width="{OnIdiom Tablet=20, Phone=5}"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="{OnIdiom Tablet=20, Phone=5}"/>
+        </ColumnDefinitionCollection>
+        <Style x:Key="LblFilter" TargetType="Label">
+            <Setter Property="TextColor" Value="Black"/>
+            <Setter Property="VerticalTextAlignment" Value="Center"/>
+            <Setter Property="HorizontalTextAlignment" Value="Start"/>
+            <Setter Property="Grid.Column" Value="1"/>
+        </Style>
+        <Style x:Key="LblForBtn" TargetType="Label">
+            <Setter Property="TextColor" Value="Red"/>
+            <Setter Property="FontAttributes" Value="Bold"/>
+            <Setter Property="VerticalTextAlignment" Value="Center"/>
+            <Setter Property="HorizontalTextAlignment" Value="End"/>
+            <Setter Property="Grid.Column" Value="2"/>
+        </Style>
+        <Style x:Key="SwitchFilter" TargetType="Switch">
+            <Setter Property="OnColor" Value="{StaticResource Primary}"/>
+            <Setter Property="ThumbColor" Value="{StaticResource PrimaryDkOffset}"/>
+            <Setter Property="HorizontalOptions" Value="End"/>
+            <Setter Property="VerticalOptions" Value="Center"/>
+            <Setter Property="Grid.Column" Value="2"/>
+        </Style>
+    </ContentPage.Resources>
+    <!--END RESOURCES-->
+
+    <Grid Style="{StaticResource StackPadding}" RowDefinitions="Auto,*">
+
+        <!--HEADER GRID-->
+        <Grid Margin="0" RowSpacing="8" ColumnDefinitions="2*, 3*" RowDefinitions="44, 44">
+
+            <!-- Left label as pill -->
+            <Frame BackgroundColor="#EFEFEF" CornerRadius="8" Padding="10" HasShadow="False" Grid.Column="0" Grid.Row="0" VerticalOptions="FillAndExpand">
+                <Label Text="Reader Description:" Style="{StaticResource LblLarge}" VerticalOptions="Center"/>
+            </Frame>
+
+            <!-- Right entry as boxed textbox -->
+            <Frame BackgroundColor="White" CornerRadius="8" Padding="6" HasShadow="False" BorderColor="{StaticResource PrimaryDkOffset}" Grid.Column="1" Grid.Row="0">
+                <Entry Text="{Binding ReaderDescription}" Style="{StaticResource EntrySettings}" BackgroundColor="Transparent"/>
+            </Frame>
+
+            <!-- Second row label pill -->
+            <Frame BackgroundColor="#EFEFEF" CornerRadius="8" Padding="10" HasShadow="False" Grid.Column="0" Grid.Row="1" VerticalOptions="FillAndExpand">
+                <Label Text="Host Folder:" Style="{StaticResource LblLarge}" VerticalOptions="Center"/>
+            </Frame>
+
+            <!-- Second row entry boxed -->
+            <Frame BackgroundColor="White" CornerRadius="8" Padding="6" HasShadow="False" BorderColor="{StaticResource PrimaryDkOffset}" Grid.Column="1" Grid.Row="1">
+                <Entry Text="{Binding HostFolder}" Style="{StaticResource EntrySettings}" BackgroundColor="Transparent"/>
+            </Frame>
+
+        </Grid>
+        <!--END HEADER GRID-->
+
+        <!--SETTINGS SCROLLVIEW-->
+        <ScrollView Grid.Row="1" Margin="0,5,0,0" VerticalOptions="FillAndExpand" Padding="12">
+
+            <!--OUTER GRID-->
+            <Grid ColumnDefinitions="{OnIdiom Tablet='*, *', Phone='*'}" RowDefinitions="{OnIdiom Tablet='*, *', Phone='7*, 5*, 5*'}" RowSpacing="12" ColumnSpacing="12">
+
+                <!--SORTING GRID-->
+                <Grid ColumnDefinitions="60, *" RowDefinitions="*, *, *, *, *, *, *, 4" Grid.RowSpan="{OnIdiom Tablet=2, Phone=1}" RowSpacing="8" ColumnSpacing="8">
+
+                    <!--FRAME + TITLE-->
+                    <Frame Style="{StaticResource FrameSettings}" Grid.ColumnSpan="2" Grid.RowSpan="8"/>
+                    <Label Text="Sort Accounts" Style="{StaticResource f9LblHeader}" FontSize="{OnIdiom Tablet=32, Phone=22}" Grid.ColumnSpan="2" Margin="12,8,12,8"/>
+                    <!--END-->
+
+                    <!--CHECKBOXES + LABELS-->
+                    <CheckBox IsChecked="{Binding SortRouteSequence}" Style="{StaticResource ChkBox}" Grid.Row="1"/>
+                    <Label Text="Route then Sequence #" Style="{StaticResource LblChkBox}" Grid.Row="1"/>
+                    <CheckBox IsChecked="{Binding SortAccountMeter}" Style="{StaticResource ChkBox}" Grid.Row="2"/>
+                    <Label Text="Account then Meter #" Style="{StaticResource LblChkBox}" Grid.Row="2"/>
+                    <CheckBox IsChecked="{Binding SortNameMeter}" Style="{StaticResource ChkBox}" Grid.Row="3"/>
+                    <Label Text="Name then Meter #" Style="{StaticResource LblChkBox}" Grid.Row="3"/>
+                    <CheckBox IsChecked="{Binding SortAddressMeter}" Style="{StaticResource ChkBox}" Grid.Row="4"/>
+                    <Label Text="Address then Meter #" Style="{StaticResource LblChkBox}" Grid.Row="4"/>
+                    <CheckBox IsChecked="{Binding SortMisc1}" Style="{StaticResource ChkBox}" Grid.Row="5"/>
+                    <Label Text="{Binding Properties.Misc1}" Style="{StaticResource LblChkBox}" Grid.Row="5"/>
+                    <CheckBox IsChecked="{Binding SortImportOrder}" Style="{StaticResource ChkBox}" Grid.Row="6"/>
+                    <Label Text="Import Order" Style="{StaticResource LblChkBox}" Grid.Row="6"/>
+                    <!--END CHECKBOXES + LABELS-->
+                </Grid>
+                <!--END SORTING GRID-->
+
+                <!--FILTER GRID-->
+                    <Grid ColumnDefinitions="{StaticResource ColumnsSettings}" RowDefinitions="*, *, *, *, *, 4"
+                        Grid.Column="{OnIdiom Tablet=1, Phone=0}" Grid.Row="{OnIdiom Tablet=0, Phone=1}" RowSpacing="8" ColumnSpacing="8">
+
+                    <!--FRAME + TITLE-->
+                    <Frame Style="{StaticResource FrameSettings}" Grid.ColumnSpan="4" Grid.RowSpan="6"/>
+                    <Label Text="Filter" Style="{StaticResource f9LblHeader}" FontSize="{OnIdiom Tablet=32, Phone=22}" Grid.ColumnSpan="4" Margin="12,8,12,8"/>
+                    <!--END-->
+
+                    <!--OPTIONS-->
+                    <Label Text="Route" Style="{StaticResource LblFilter}" Grid.Row="1"/>
+                    <Label Text="{Binding RouteSelected}" Style="{StaticResource LblForBtn}" FontSize="18" Grid.Row="1"/>
+                    <Button Command="{Binding SelectRoute_Command}" BackgroundColor="Transparent" Grid.Column="2" Grid.Row="1"/>
+                    <Label Text="Missing Readings Only" Style="{StaticResource LblFilter}" Grid.Row="2"/>
+                    <Switch IsToggled="{Binding IsMissingOnly}" Style="{StaticResource SwitchFilter}" Grid.Row="2"/>
+                    <Label Text="Open SO's Only" Style="{StaticResource LblFilter}" Grid.Row="3"/>
+                    <Switch IsToggled="{Binding IsOpenOnly}" Style="{StaticResource SwitchFilter}" Grid.Row="3"/>
+                    <Label Text="Auto Advance" Style="{StaticResource LblFilter}" Grid.Row="4"/>
+                    <Switch IsToggled="{Binding IsAutoAdvance}" Style="{StaticResource SwitchFilter}" Grid.Row="4"/>
+                    <!--END OPTIONS-->
+                </Grid>
+                <!--END FILTER ACCOUNTS GRID-->
+
+                <!--READINGS GRID-->
+                    <Grid ColumnDefinitions="{StaticResource ColumnsSettings}" RowDefinitions="*, *, *, *, *, 4"
+                        Grid.Column="{OnIdiom Tablet=1, Phone=0}" Grid.Row="{OnIdiom Tablet=1, Phone=2}" RowSpacing="8" ColumnSpacing="8">
+
+                    <!--FRAME + TITLE-->
+                    <Frame Style="{StaticResource FrameSettings}" Grid.ColumnSpan="4" Grid.RowSpan="6"/>
+                    <Label Text="Readings Options" Style="{StaticResource f9LblHeader}" FontSize="{OnIdiom Tablet=32, Phone=22}" Grid.ColumnSpan="4" Margin="12,8,12,8"/>
+                    <!--END-->
+
+                    <!--OPTIONS-->
+                    <Label Text="Variance" Style="{StaticResource LblFilter}" Grid.Row="1"/>
+                    <Switch IsToggled="{Binding IsVarianceEnabled}" Style="{StaticResource SwitchFilter}" Grid.Row="1"/>
+                    <Label Text="Variance %" Style="{StaticResource LblFilter}" Grid.Row="2"/>
+                    <Entry Text="{Binding Variance}" BackgroundColor="Transparent" TextColor="{StaticResource Primary}" FontSize="20" 
+                           Keyboard="Numeric" WidthRequest="70" VerticalTextAlignment="{OnPlatform Android=End, iOS=Center}"
+                           HorizontalTextAlignment="Center" HorizontalOptions="End" Grid.Column="2" Grid.Row="2"/>
+                    <Label Text="Reading Decimals" Style="{StaticResource LblFilter}" Grid.Row="3"/>
+                    <Label Text="{Binding Decimals}" Style="{StaticResource LblForBtn}" FontSize="20" Grid.Row="3"/>
+                    <Button Command="{Binding SelectDecimals_Command}" BackgroundColor="Transparent" Grid.Column="2" Grid.Row="3"/>
+                    <Label Text="Backup File Duration (days)" Style="{StaticResource LblFilter}" Grid.ColumnSpan="2" Grid.Row="4"/>
+                    <Label Text="{Binding BackupFilesDuration}" Style="{StaticResource LblForBtn}" FontSize="20" Grid.Row="4"/>
+                    <Button Command="{Binding SelectBackupFileDuraction_Command}" BackgroundColor="Transparent" Grid.Column="2" Grid.Row="4"/>
+                    <!--END OPTINS-->
+                </Grid>
+                <!--END VARIANCE GRID-->
+            </Grid>
+            <!--END OUTER GRID-->
+        </ScrollView>
+        <!--END SETTINGS SCROLLVIEW-->
+    </Grid>
+</ContentPage>

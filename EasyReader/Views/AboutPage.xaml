@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodel="clr-namespace:EasyReader.ViewModels"
+             xmlns:local="clr-namespace:EasyReader.Views"
+             xmlns:d="http://schemas.microsoft.com/dotnet/2021/maui/design"
+             x:Class="EasyReader.Views.AboutPage"
+           xmlns:pdfjs="clr-namespace:MauiPdfJSViewer;assembly=MauiPdfJSViewer"
+           
+             BackgroundColor="White">
+
+    <ContentPage.BindingContext>
+        <viewmodel:AboutViewModel />
+    </ContentPage.BindingContext>
+
+    <Shell.TitleView>
+        <Label Text="About" Style="{StaticResource LblTitleView}"/>
+    </Shell.TitleView>
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Home" Command="{Binding GoTo_MainPage_Command}" Order="Primary" Priority="0"/>
+    </ContentPage.ToolbarItems>
+    <!--END-->
+
+
+    <Grid Padding="16" RowDefinitions="Auto,Auto,*" RowSpacing="25">
+        <Label Text="{Binding AboutInfo_String}" TextColor="Black" Grid.Row="1" FontSize="14" />
+        <pdfjs:PdfJsWebView   x:Name="pdfJsViewer"  Grid.Row="2"/>
+    </Grid>
+
+</ContentPage>

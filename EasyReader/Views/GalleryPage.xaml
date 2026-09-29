@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://schemas.microsoft.com/dotnet/2021/maui/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodel="clr-namespace:EasyReader.ViewModels"
+             mc:Ignorable="d"
+             x:Class="EasyReader.Views.GalleryPage">
+
+    <!-- VIEW MODEL + TITLE VIEW-->
+    <ContentPage.BindingContext>
+        <viewmodel:GalleryViewModel/>
+    </ContentPage.BindingContext>
+    <Shell.TitleView>
+        <Label Text="{Binding FileName}" Style="{StaticResource LblTitleView}"/>
+    </Shell.TitleView>
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Home" Command="{Binding GoTo_MainPage_Command}" Order="Primary" Priority="0"/>
+    </ContentPage.ToolbarItems>
+    <!--END-->
+
+    <StackLayout BackgroundColor="White">
+        <Image Source="{Binding FileImage}" Aspect="AspectFit" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand"/>
+    </StackLayout>
+</ContentPage>

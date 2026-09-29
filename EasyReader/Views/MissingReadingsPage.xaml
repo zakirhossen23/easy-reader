@@ -1,0 +1,189 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://schemas.microsoft.com/dotnet/2021/maui/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodel="clr-namespace:EasyReader.ViewModels"
+             xmlns:local="clr-namespace:EasyReader.Views"
+             mc:Ignorable="d"
+             x:Class="EasyReader.Views.MissingReadingsPage"
+             BackgroundColor="White">
+
+    <!-- VIEW MODEL + TITLE VIEW + TOOLBAR-->
+    <ContentPage.BindingContext>
+        <viewmodel:MissingReadingsViewModel/>
+    </ContentPage.BindingContext>
+    <Shell.TitleView>
+        <Label Text="{OnIdiom Tablet='Missing Readings', Phone='Missing'}" Style="{StaticResource LblTitleView}"/>
+    </Shell.TitleView>
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Home" Command="{Binding GoTo_MainPage_Command}" Order="Primary" Priority="0"/>
+        <ToolbarItem IconImageSource="settings.png" Command="{Binding GoTo_SettingsPage_Command}" Order="Primary" Priority="1"/>
+    </ContentPage.ToolbarItems>
+    <!--END-->
+
+    <Grid Style="{StaticResource GridPadding}" >
+
+        <!--OUTER GRID-->
+        <Grid x:Name="outerGrid" RowDefinitions="*,Auto,*" RowSpacing="5" >
+
+            <!--ACCOUNT DETAILS GRID-->
+            <Grid x:Name="accountDetailsGrid" RowSpacing="5" ColumnSpacing="5"  Grid.Column="0" ColumnDefinitions="*,*,*,*" RowDefinitions="*,*,*,*,*,*,*,*,*,*" Grid.Row="0">
+                <!--BOX VIEWS-->
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="0"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="0"/>
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="2" Grid.Row="0"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="3" Grid.Row="0"/>
+                <!--<BoxView Style="{StaticResource BoxValueLong}" Grid.Column="1" Grid.Row="0"/>-->
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="1"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="1"/>
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="2" Grid.Row="1"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="3" Grid.Row="1"/>
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="2"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="2"/>
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="2" Grid.Row="2"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="3" Grid.Row="2"/>
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="3"/>
+                <BoxView Style="{StaticResource BoxValueLong}" Grid.ColumnSpan="3" Grid.Column="1" Grid.Row="3"/>
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="4"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="4"/>
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="2" Grid.Row="4"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="3" Grid.Row="4"/>
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="5"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="5"/>
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="2" Grid.Row="5"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="3" Grid.Row="5"/>
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="6"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="6"/>
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="2" Grid.Row="6"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="3" Grid.Row="6"/>
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="7"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="7"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="2" Grid.Row="7"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="3" Grid.Row="7"/>
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="8"/>
+                <BoxView Style="{StaticResource BoxValueLong}" Grid.ColumnSpan="3" Grid.Column="1" Grid.Row="8"/>
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="9"/>
+                <BoxView Style="{StaticResource BoxValueLong}"  Grid.ColumnSpan="3" Grid.Column="1" Grid.Row="9"/>
+                <!--END BOX VIEWS-->
+
+                <!--ACCOUNT LABELS-->
+                <Label Text="Name:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="0"/>
+                <Label Text="{Binding Account.Name}" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="0"/>
+                <Label Text="Premise:" Style="{StaticResource Lbl}" Grid.Column="2" Grid.Row="0"/>
+                <Label Text="{Binding Account.Premise}" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="0"/>
+                <!--<Label Text="{Binding Account.Name}" Style="{StaticResource LblLong}" Grid.Column="1" Grid.Row="0"/>-->
+                <Label Text="Route:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="1"/>
+                <Label Text="{Binding Account.Route}" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="1"/>
+                <Label Text="{OnIdiom Tablet='Walk Seq:', Phone='Seq:'}" Style="{StaticResource Lbl}" Grid.Column="2" Grid.Row="1"/>
+                <Label Text="{Binding Account.WalkSequence}" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="1"/>
+                <Label Text="Account #:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="2"/>
+                <Label Text="{Binding Account.AccountNumber}" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="2"/>
+                <Label Text="Meter #:" Style="{StaticResource Lbl}" Grid.Column="2" Grid.Row="2"/>
+                <Label Text="{Binding Account.MeterNumber}" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="2"/>
+                <Label Text="Address:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="3"/>
+                <Label Text="{Binding Account.Location}" Style="{StaticResource LblLong}" Grid.ColumnSpan="3" Grid.Column="1" Grid.Row="3"/>
+                <Label Text="{Binding Misc1Label}" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="4"/>
+                <Label Text="{Binding Account.Misc1}" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="4"/>
+                <Label Text="Utility:" Style="{StaticResource Lbl}" Grid.Column="2" Grid.Row="4"/>
+                <Label Text="{Binding Account.Utility}" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="4"/>
+                <Label Text="{OnIdiom Tablet='Last Reading:', Phone='Last:'}" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="5"/>
+                <Label Text="{Binding Account.LastReading}" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="5"/>
+                <Label Text="Date:" Style="{StaticResource Lbl}" Grid.Column="2" Grid.Row="5"/>
+                <Label Text="{Binding Account.LastReadDate}" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="5"/>
+                <Label Text="{OnIdiom Tablet='Avg. Usage:', Phone='Avg.:'}" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="6"/>
+                <Label Text="{Binding Account.AvgUsage}" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="6"/>
+                <Label Text="{OnIdiom Tablet='New Usage:', Phone='Usage:'}" Style="{StaticResource Lbl}" Grid.Column="2" Grid.Row="6"/>
+                <Label Text="{Binding Account.NewUsage}" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="6"/>
+                <Label Text="New Reading:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="7"/>
+                <Label Text="{Binding Account.NewReading}" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="7"/>
+                <Label Text="{Binding Account.NewReadDate}" Style="{StaticResource Lbl}" Grid.Column="2" Grid.Row="7"/>
+                <Label Text="{Binding Account.NewReadTime}" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="7"/>
+                <Label Text="Notes:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="8"/>
+                <Label Text="{Binding Account.Notes}" Style="{StaticResource LblLong}" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="8"/>
+                <Label Text="{OnIdiom Tablet='Missing Status:', Phone='Missing:'}" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="9"/>
+                <Label Text="{Binding MissingReadingsStatusLabel}" Style="{StaticResource LblLong}" Grid.Column="1" Grid.Row="9"/>
+                <!--END ACCOUNT LABELS-->
+            </Grid>
+            <!--END ACCOUNT DETAILS GRID-->
+
+            <!--FILES GRID-->
+            <Grid x:Name="filesGrid">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="{OnIdiom Tablet=44, Phone=24}"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!--FRAME + TITLE-->
+                <Frame BorderColor="{StaticResource PrimaryDkOffset}" BackgroundColor="Transparent" Padding="10"
+                       CornerRadius="10" HasShadow="False" Grid.RowSpan="3"/>
+                <Label Text="Account Files" Style="{StaticResource f9LblHeader}" FontSize="{OnIdiom Tablet=40, Phone=20}"/>
+                <!--END-->
+
+                <!--FILE ACTIONS GRID-->
+                <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="5"  Margin="{OnIdiom Tablet='15, 0', Phone='8, 0'}" Grid.Row="1">
+                    <StackLayout Orientation="{OnIdiom Tablet=Vertical, Phone=Horizontal}" Spacing="0" Grid.Column="0">
+                        <CheckBox IsChecked="{Binding SelectAllFiles}" Color="{StaticResource Primary}"
+                                  Margin="{OnIdiom Tablet='5, 0', Phone='0'}" VerticalOptions="{OnIdiom Tablet=End, Phone=Center}" HorizontalOptions="Center"/>
+                        <Label Text="All" TextColor="Black" FontSize="Micro" HorizontalTextAlignment="Center" VerticalTextAlignment="Center"/>
+                    </StackLayout>
+                    <!--box views needed for ios-->
+                    <BoxView Style="{StaticResource BoxAcntFileAction}" Grid.Column="1"/>
+                    <Button Text="Open" Command="{Binding OpenAccountFile_Command}" Style="{StaticResource f9BtnAcntFileAction}" Grid.Column="1"/>
+                    <BoxView Style="{StaticResource BoxAcntFileAction}" Grid.Column="2"/>
+                    <Button Text="Rename" Command="{Binding RenameAccountFile_Command}" Style="{StaticResource f9BtnAcntFileAction}" Grid.Column="2"/>
+                    <BoxView Style="{StaticResource BoxAcntFileAction}" Grid.Column="3"/>
+                    <Button Text="Delete" Command="{Binding DeleteAccountFiles_Command}" Style="{StaticResource f9BtnAcntFileAction}" Grid.Column="3"/>
+                    <BoxView Style="{StaticResource BoxAcntFileAction}" Grid.Column="4"/>
+                    <Button Text="Email" Command="{Binding SendAccountFiles_Command}" Style="{StaticResource f9BtnAcntFileAction}" Grid.Column="4"/>
+                </Grid>
+                <!--END FILE ACTIONS GRID-->
+
+                <!--FILES LIST-->
+                <ListView ItemsSource="{Binding AccountFilesOC}" SelectionMode="None" BackgroundColor="Transparent"
+                          Margin="15, 0, 15, 15" Grid.Row="2">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <ViewCell Tapped="FileViewCellTapped">
+                                <Grid ColumnDefinitions="40, *">
+                                    <CheckBox IsChecked="{Binding IsSelected}" Color="{StaticResource Primary}" Margin="5, 0"
+                                              VerticalOptions="Center" HorizontalOptions="Center" Grid.Column="0"/>
+                                    <Label Text="{Binding Name}" TextColor="{StaticResource Primary}"
+                                           VerticalTextAlignment="Center" HorizontalTextAlignment="Start" Grid.Column="1"/>
+                                </Grid>
+                            </ViewCell>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+                <!--END FILES LIST-->
+            </Grid>
+            <!--END FILES GRID-->
+
+            <!--BOTTOM BUTTONS GRID-->
+            <Grid x:Name="botButtonsGrid" RowDefinitions="*,*" ColumnDefinitions="*,*,*,*" RowSpacing="5" ColumnSpacing="5">
+                <!--CHANGE ACCOUNT BUTTONS-->
+                <ImageButton Source="first.png" Command="{Binding FirstAccount_Command}"
+                             Style="{StaticResource ImgBtnBotBtns}" Grid.Column="0" Grid.Row="0"/>
+                <ImageButton Source="previous.png" Command="{Binding PreviousAccount_Command}"
+                             Style="{StaticResource ImgBtnBotBtns}" Grid.Column="1" Grid.Row="0"/>
+                <ImageButton Source="next.png" Command="{Binding NextAccount_Command}"
+                             Style="{StaticResource ImgBtnBotBtns}" Grid.Column="2" Grid.Row="0" />
+                <ImageButton Source="last.png" Command="{Binding LastAccount_Command}"
+                             Style="{StaticResource ImgBtnBotBtns}" Grid.Column="3" Grid.Row="0"/>
+
+                <!--SPECIAL FUNCTION BUTTONS-->
+                <ImageButton Source="enternote.png" Command="{Binding GoTo_NotesPage_Command}"
+                             Style="{StaticResource ImgBtnBotBtns}" Grid.Column="0" Grid.Row="1"/>
+                <ImageButton Source="takephoto.png" Command="{Binding TakeSavePhoto_Command}"
+                             Style="{StaticResource ImgBtnBotBtns}" Grid.Column="1" Grid.Row="1"/>
+                <ImageButton Source="findroute.png" Command="{Binding OpenMaps_Command}"
+                             Style="{StaticResource ImgBtnBotBtns}" Grid.Column="2" Grid.Row="1"/>
+                <ImageButton Source="maplocation.png" Command="{Binding SaveCurrentLocation_Command}"
+                             Style="{StaticResource ImgBtnBotBtns}" Grid.Column="3" Grid.Row="1"/>
+            </Grid>
+            <!--END BOTTOM BUTTONS GRID-->
+        </Grid>
+        <!--END OUTER GRID-->
+    </Grid>
+</ContentPage>

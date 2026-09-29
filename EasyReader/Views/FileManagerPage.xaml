@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://schemas.microsoft.com/dotnet/2021/maui/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodel="clr-namespace:EasyReader.ViewModels"
+             xmlns:local="clr-namespace:EasyReader.Views"
+             mc:Ignorable="d"
+             x:Class="EasyReader.Views.FileManagerPage"
+             BackgroundColor="White">
+
+    <!-- BindingContext is provided by the page code-behind to ensure a single VM instance with Navigation -->
+    <Shell.TitleView>
+        <Label Text="{OnIdiom Tablet='File Manager', Phone='Files'}" Style="{StaticResource LblTitleView}"/>
+    </Shell.TitleView>
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Home" Command="{Binding GoTo_MainPage_Command}" Order="Primary" Priority="0"/>
+        <ToolbarItem Text="Adv." Command="{Binding GoTo_AdvancedFileManagerPage_Command}" Order="Primary" Priority="1"/>
+        <ToolbarItem IconImageSource="settings.png" Command="{Binding GoTo_SettingsPage_Command}" Order="Primary" Priority="2"/>
+    </ContentPage.ToolbarItems>
+    <!--END-->
+
+    <!--RESOURCES-->
+    <ContentPage.Resources>
+        <Style x:Key="FrameFM" TargetType="Frame">
+            <Setter Property="BorderColor" Value="{StaticResource PrimaryDkOffset}"/>
+            <Setter Property="BackgroundColor" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="HasShadow" Value="False"/>
+            <Setter Property="Grid.ColumnSpan" Value="3"/>
+            <Setter Property="Grid.RowSpan" Value="4"/>
+        </Style>
+        <Style x:Key="BtnActionFM" TargetType="Button">
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="FontSize" Value="{OnIdiom Tablet=15, Phone=10}"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Margin" Value="10, 0"/>
+            <Setter Property="Padding" Value="8, 1"/>
+            <Setter Property="Grid.ColumnSpan" Value="3"/>
+        </Style>
+        <Style x:Key="ImgActionBtnFM" TargetType="Image">
+            <Setter Property="Aspect" Value="AspectFit"/>
+            <Setter Property="Margin" Value="15, 5"/>
+            <Setter Property="HorizontalOptions" Value="Start"/>
+        </Style>
+        <Style x:Key="GridPopupFM" TargetType="Grid">
+            <Setter Property="BackgroundColor" Value="Transparent"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Grid.Column" Value="1"/>
+            <Setter Property="Grid.Row" Value="1"/>
+        </Style>
+        <Style x:Key="BoxBackgroundFM" TargetType="BoxView">
+            <Setter Property="BackgroundColor" Value="#ac000000"/>
+            <Setter Property="Grid.ColumnSpan" Value="3"/>
+            <Setter Property="Grid.RowSpan" Value="3"/>
+        </Style>
+    </ContentPage.Resources>
+    <!--END-->
+
+    <!--OUTER GRID-->
+    <Grid RowSpacing="0" Margin="0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="{OnIdiom Tablet=4*, Phone=60*}"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="{OnIdiom Tablet=2.5*, Phone=4*}"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!--INNER GRID-->
+        <Grid  Grid.ColumnSpan="3" Grid.RowSpan="3">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="{OnIdiom Tablet=140, Phone=100}"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!--FILE STATUS GRID-->
+            <Grid Style="{StaticResource GridPadding}" ColumnDefinitions="2*, 3*" Grid.Row="0" RowSpacing="5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="{OnIdiom Tablet=36, Phone=26}"/>
+                    <RowDefinition Height="{OnIdiom Tablet=36, Phone=26}"/>
+                    <RowDefinition Height="{OnIdiom Tablet=36, Phone=26}"/>
+                </Grid.RowDefinitions>
+
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="0"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="0"/>
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="1"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="1"/>
+                <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="2"/>
+                <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="2"/>
+
+                <Label Text="Missing Readings:" Style="{StaticResource LblLarge}" Grid.Column="0" Grid.Row="0"/>
+                <Label Text="{Binding MissingReadingsStatusLabel}" Style="{StaticResource LblLarge}" HorizontalTextAlignment="Center"
+                       Grid.Column="1" Grid.Row="0"/>
+                <Label Text="Open Service Orders:" Style="{StaticResource LblLarge}" Grid.Column="0" Grid.Row="1"/>
+                <Label Text="{Binding OpenSOsStatusLabel}" Style="{StaticResource LblLarge}" HorizontalTextAlignment="Center"
+                       Grid.Column="1" Grid.Row="1"/>
+                <Label Text="Readings File Name:" Style="{StaticResource LblLarge}" Grid.Column="0" Grid.Row="2"/>
+                <Label Text="{Binding ReadingsFileNameLabel}" Style="{StaticResource LblLarge}" HorizontalTextAlignment="Center"
+                       Grid.Column="1" Grid.Row="2"/>
+            </Grid>
+            <!--END FILE STATUS GRID-->
+
+            <!--FILE MANAGEMENT GRID-->
+            <Grid x:Name="fileManagementGrid" ColumnDefinitions="*" Grid.Row="1" RowDefinitions="*,*,*">
+
+                <Grid Style="{StaticResource GridPadding}" Grid.Column="0" Grid.Row="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="1"/>
+                    </Grid.RowDefinitions>
+                    <!--MANAGE READINGS FILES-->
+                    <Frame Style="{StaticResource FrameFM}" Grid.Row="0"/>
+                    <Label Text="Manage Readings" Style="{StaticResource f9LblHeader}" FontSize="{OnIdiom Tablet=30, Phone=20}" Grid.ColumnSpan="3" Grid.Row="0"/>
+                    <Button Text="Download New Readings" Command="{Binding DownloadNewReadingsFile_Command}"
+                        Style="{StaticResource BtnActionFM}" BackgroundColor="Green" Grid.Row="1"/>
+                    <Image Source="loadfile.png" Style="{StaticResource ImgActionBtnFM}"  Grid.Row="1"/>
+                    <Button Text="Export Readings" Command="{Binding ExportReadingsFile_Command}"
+                        Style="{StaticResource BtnActionFM}" BackgroundColor="{StaticResource Primary}" Grid.Row="2"/>
+                    <Image Source="sync.png" Style="{StaticResource ImgActionBtnFM}" Grid.Row="2"/>
+                    <!--END MANAGE READINGS FILES-->
+
+                </Grid>
+
+                <Grid Style="{StaticResource GridPadding}"  Grid.Column="1"  Grid.Row="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="1"/>
+                    </Grid.RowDefinitions>
+                    <!--MANAGE SERVICE ORDERS-->
+                    <Frame Style="{StaticResource FrameFM}" Grid.Row="0"/>
+                    <Label Text="Manage Service Orders" Style="{StaticResource f9LblHeader}" FontSize="{OnIdiom Tablet=30, Phone=20}" Grid.ColumnSpan="3" Grid.Row="0"/>
+                    <Button Text="Download New Service Orders" Command="{Binding SelectSOsToDownload_Command}"
+                        Style="{StaticResource BtnActionFM}" BackgroundColor="Green" Grid.Row="1"/>
+                    <Image Source="loadfile.png" Style="{StaticResource ImgActionBtnFM}" Grid.Row="1"/>
+                    <Button Text="Upload Service Orders" Command="{Binding SelectStatusesToUpload_Command}"
+                        Style="{StaticResource BtnActionFM}" BackgroundColor="{StaticResource Primary}" Grid.Row="2"/>
+                    <Image Source="sync.png" Style="{StaticResource ImgActionBtnFM}" Grid.Row="2"/>
+                    <!--END MANAGE SERVICE ORDERS-->
+                </Grid>
+            </Grid>
+            <!--END FILE MANAGEMENT GRID-->
+        </Grid>
+        <!--END INNER GRID-->
+
+        <!--SELECT SOs TO DOWNLOAD GRID-->
+        <BoxView Style="{StaticResource BoxBackgroundFM}" IsVisible="{Binding ViewDownloadSOsSelection}" />
+        <Grid Style="{StaticResource GridPopupFM}" IsVisible="{Binding ViewDownloadSOsSelection}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="{OnIdiom Tablet=50, Phone=40}"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="{OnIdiom Tablet=65, Phone=55}"/>
+            </Grid.RowDefinitions>
+
+            <!--FRAME + TITLE-->
+            <Border Style="{StaticResource BorderPopupBackground}" Grid.RowSpan="3" Padding="12" Grid.Row="0"/>
+            <Label Text="Select Service Orders" Style="{StaticResource f9LblPopupTitle}" Grid.Row="0"
+                       Margin="{OnIdiom Tablet='15, 10, 15, 0', Phone='8, 8, 8, 0'}"/>
+            <!-- CLOSE BUTTON -->
+            <Button Style="{StaticResource BtnPopupXOut}" Command="{Binding CancelDownload_Command}" Grid.Row="0" HorizontalOptions="End" VerticalOptions="Start"/>
+            <!--END-->
+
+            <!--FILE SELECTION-->
+            <CollectionView ItemsSource="{Binding FilesList}" Margin="{OnIdiom Tablet='15, 0', Phone='8, 0'}" Grid.Row="1" VerticalOptions="FillAndExpand">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="40, *">
+                            <CheckBox IsChecked="{Binding IsSelected}" Color="{StaticResource Primary}" Margin="5, 0"
+                                      VerticalOptions="Center" HorizontalOptions="Center" Grid.Column="0"/>
+                            <Label Text="{Binding Name}" TextColor="{StaticResource Primary}"
+                                   VerticalTextAlignment="Center" HorizontalTextAlignment="Start" Grid.Column="1"/>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+            <!--END FILE SELECTION-->
+
+            <!--SELECT ALL + DOWNLOAD + CANCEL BUTTONS-->
+            <Grid Margin="{OnIdiom Tablet='15, 0, 15, 10', Phone='8, 0, 8, 8'}" Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="{OnIdiom Tablet=*, Phone=0}"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Button Text="Select All" Command="{Binding SelectAllFilesToDownload_Command}"
+                        Style="{StaticResource BtnPopupSave}" BackgroundColor="{StaticResource Primary}" Grid.Column="0"/>
+                <Button Text="Download" Command="{Binding FtpDownload_SOFile_Command}"
+                        Style="{StaticResource BtnPopupSave}" Grid.Column="2"/>
+                <Button Command="{Binding CancelDownload_Command}" Style="{StaticResource BtnPopupCancel}" Grid.Column="3"/>
+            </Grid>
+            <!--END BUTTONS-->
+        </Grid>
+        <!--END SELECT STATUSES GRID-->
+
+        <!--SELECT STATUSES GRID-->
+        <BoxView Style="{StaticResource BoxBackgroundFM}" IsVisible="{Binding ViewStatusSelection}"/>
+        <Grid Style="{StaticResource GridPopupFM}" IsVisible="{Binding ViewStatusSelection}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="{OnIdiom Tablet=50, Phone=40}"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="{OnIdiom Tablet=75, Phone=75}"/>
+            </Grid.RowDefinitions>
+
+            <!--FRAME + TITLE-->
+            <Border Style="{StaticResource BorderPopupBackground}" Grid.RowSpan="3" Padding="12" Grid.Row="0"/>
+            <Label Text="Select Statuses" Style="{StaticResource f9LblPopupTitle}" Grid.Row="0"
+                       Margin="{OnIdiom Tablet='15, 10, 15, 0', Phone='8, 8, 8, 0'}"/>
+            <!-- CLOSE BUTTON -->
+            <Button Style="{StaticResource BtnPopupXOut}" Command="{Binding CancelUpload_Command}" Margin="-10"  Grid.Row="0"/>
+            <!--END-->
+
+            <!--STATUS SELECTION-->
+            <CollectionView ItemsSource="{Binding StatusesList}" Margin="{OnIdiom Tablet='15, 0', Phone='8, 0'}" Grid.Row="1" VerticalOptions="FillAndExpand">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="40, *">
+                            <CheckBox IsChecked="{Binding WriteSOs}" Color="{StaticResource Primary}" Margin="5, 0"
+                                      VerticalOptions="Center" HorizontalOptions="Center" Grid.Column="0"/>
+                            <Label Text="{Binding DisplayLabel}" TextColor="{StaticResource Primary}"
+                                   VerticalTextAlignment="Center" HorizontalTextAlignment="Start" Grid.Column="1"/>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+            <!--END STATUS SELECTION-->
+
+            <!--UPLOAD + CANCEL BUTTONS-->
+            <StackLayout Orientation="Horizontal" HorizontalOptions="End"
+                         Margin="{OnIdiom Tablet='15, 0, 15, 10', Phone='0'}" Grid.Row="2">
+                <Button Text="Upload" Command="{Binding FtpUpload_SOFile_Command}" WidthRequest="100" Style="{StaticResource BtnPopupSave}"/>
+                <Button Command="{Binding CancelUpload_Command}" WidthRequest="100"  Style="{StaticResource BtnPopupCancel}"/>
+            </StackLayout>
+            <!--END BUTTONS-->
+        </Grid>
+        <!--END SELECT STATUSES GRID-->
+    </Grid>
+    <!--END OUTER GRID-->
+</ContentPage>

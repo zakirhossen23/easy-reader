@@ -1,0 +1,349 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodel="clr-namespace:EasyReader.ViewModels"
+             xmlns:local="clr-namespace:EasyReader.Views"
+             mc:Ignorable="d"
+             x:Class="EasyReader.Views.SODetailsPage"
+             BackgroundColor="{StaticResource Primary}">
+
+    <!-- VIEW MODEL + TITLE VIEW + TOOLBAR-->
+    <ContentPage.BindingContext>
+        <viewmodel:SODetailsViewModel/>
+    </ContentPage.BindingContext>
+        
+   <Shell.TitleView>
+        <Label Text="{OnIdiom Tablet='Service Orders', Phone='Service'}" Style="{StaticResource LblTitleView}"/>
+    </Shell.TitleView>
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Home" Command="{Binding GoTo_MainPage_Command}" Order="Primary" Priority="0"/>
+        <ToolbarItem IconImageSource="settings.png" Command="{Binding GoTo_SettingsPage_Command}" Order="Primary" Priority="1"/>
+    </ContentPage.ToolbarItems>
+    <!--END-->
+
+
+
+    <!--RESOURCES-->
+    <ContentPage.Resources>
+        <Style x:Key="BoxNameBlue" TargetType="BoxView">
+            <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="HeightRequest" Value="36" />
+        </Style>
+        <Style x:Key="BoxValueBlue" TargetType="BoxView">
+            <Setter Property="BackgroundColor" Value="{StaticResource PrimaryOffset}"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="HeightRequest" Value="36" />
+        </Style>
+        <Style x:Key="FrameSODet" TargetType="Frame">
+            <Setter Property="BorderColor" Value="{StaticResource PrimaryDkOffset}"/>
+            <Setter Property="BackgroundColor" Value="{StaticResource PrimaryLtOffset}"/>
+            <Setter Property="HasShadow" Value="False"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="1"/>
+            <Setter Property="Grid.ColumnSpan" Value="2"/>
+            <Setter Property="Grid.Row" Value="8"/>
+        </Style>
+        <Style x:Key="LblWhite" TargetType="Label">
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="FontSize" Value="{OnIdiom Tablet=15, Phone=10}"/>
+         
+            <Setter Property="Padding" Value="10, 1"/>
+            <Setter Property="HeightRequest" Value="24"/>
+            <Setter Property="VerticalTextAlignment" Value="Center"/>
+            <Setter Property="HorizontalTextAlignment" Value="Start"/>
+        </Style>
+        <Style x:Key="BtnActionSODet" TargetType="Button">
+            <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="Padding" Value="1"/>
+            <Setter Property="CornerRadius" Value="5"/>
+        </Style>
+        <Style x:Key="BtnBotBtns" TargetType="Button">
+            <Setter Property="BackgroundColor" Value="{StaticResource SecondaryDk}"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="FontSize" Value="{OnIdiom Tablet=18, Phone=10}"/>
+            <Setter Property="Padding" Value="1"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Grid.Row" Value="1"/>
+            <Setter Property="HorizontalOptions" Value="FillAndExpand" />
+        </Style>
+    </ContentPage.Resources>
+    <!--END RESOURCES-->
+
+    <!--OUTER GRID-->
+    <Grid x:Name="gridOuter" ColumnDefinitions="*" RowDefinitions="*,*">
+
+        <!--INNER GRID (Details) -->
+        <Grid x:Name="gridInner" Grid.Column="0" Style="{StaticResource GridPadding}" BackgroundColor="White">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <!-- Adaptive visual states are defined on the individual controls below -->
+            <Grid.RowDefinitions>
+                <!-- Use Auto for rows that should size to their content to improve responsiveness -->
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="2"/>
+            </Grid.RowDefinitions>
+
+            <!--BOX VIEWS-->
+            <BoxView Style="{StaticResource BoxNameBlue}" Grid.Column="0" Grid.Row="0"/>
+            <BoxView Style="{StaticResource BoxValueBlue}" Grid.Column="1" Grid.Row="0"/>
+            <BoxView Style="{StaticResource BoxNameBlue}" Grid.Column="2" Grid.Row="0"/>
+            <BoxView Style="{StaticResource BoxValueBlue}" Grid.Column="3" Grid.Row="0"/>
+            <BoxView Style="{StaticResource BoxNameBlue}" Grid.Column="0" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxValueBlue}" Grid.Column="1" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxNameBlue}" Grid.Column="2" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxValueBlue}" Grid.Column="3" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxNameBlue}" Grid.Column="0" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxValueBlue}" Grid.Column="1" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxNameBlue}" Grid.Column="2" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxValueBlue}" Grid.Column="3" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="3"/>
+            <BoxView Style="{StaticResource BoxValueLong}" Grid.ColumnSpan="3" Grid.Column="1" Grid.Row="3"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="4"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="4"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="2" Grid.Row="4"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="3" Grid.Row="4"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="5"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="5"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="2" Grid.Row="5"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="3" Grid.Row="5"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="6"/>
+            <BoxView Style="{StaticResource BoxValueLong}" Grid.ColumnSpan="3" Grid.Column="1" Grid.Row="6"/>
+
+         
+            <!--END BOX VIEWS-->
+
+            <!--LABELS-->
+            <Label Text="SO Number:" Style="{StaticResource LblWhite}" Grid.Column="0" Grid.Row="0"/>
+            <Label Text="{Binding ServiceOrder.SONum}" Style="{StaticResource LblWhite}" Grid.Column="1" Grid.Row="0"/>
+            <Label Text="Priority:" Style="{StaticResource LblWhite}" Grid.Column="2" Grid.Row="0"/>
+            <Label Text="{Binding ServiceOrder.SOInfo.SOPriority}" Style="{StaticResource LblWhite}" Grid.Column="3" Grid.Row="0"/>
+            <Label Text="Req. Date:" Style="{StaticResource LblWhite}" Grid.Column="0" Grid.Row="1"/>
+            <Label Text="{Binding ServiceOrder.SOInfo.RequestedServiceDate}" Style="{StaticResource LblWhite}" Grid.Column="1" Grid.Row="1"/>
+            <Label Text="Req. Time:" Style="{StaticResource LblWhite}" Grid.Column="2" Grid.Row="1"/>
+            <Label Text="{Binding ServiceOrder.SOInfo.RequestedServiceStartTime}" Style="{StaticResource LblWhite}" Grid.Column="3" Grid.Row="1"/>
+            <Label Text="Index:" Style="{StaticResource LblWhite}" Grid.Column="0" Grid.Row="2"/>
+            <Label Text="{Binding IndexLabel}" Style="{StaticResource LblWhite}" Grid.Column="1" Grid.Row="2"/>
+            <Label Text="Status:" Style="{StaticResource LblWhite}" Grid.Column="2" Grid.Row="2"/>
+            <Label Text="{Binding ServiceOrder.SOInfo.SOStatus}" Style="{StaticResource LblWhite}" Grid.Column="3" Grid.Row="2"/>
+           
+            <Label Text="Name:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="3"/>
+            <Label Text="{Binding ServiceOrder.Customer.CustomerName}" Style="{StaticResource LblLong}" Grid.Column="1" Grid.Row="3"/>
+            <Label Text="Route:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="4"/>
+            <Label Text="{Binding ServiceOrder.Meter.Route}" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="4"/>
+            <Label Text="Walk Seq:" Style="{StaticResource Lbl}" Grid.Column="2" Grid.Row="4"/>
+            <Label Text="{Binding ServiceOrder.Meter.ReadSequence}" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="4"/>
+            <Label Text="Account #:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="5"/>
+            <Label Text="{Binding ServiceOrder.Customer.Accountnum}" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="5"/>
+            <Label Text="Meter #:" Style="{StaticResource Lbl}" Grid.Column="2" Grid.Row="5"/>
+            <Label Text="{Binding ServiceOrder.Meter.MeterNum}" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="5"/>
+            <Label Text="Address:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="6"/>
+            <Label Text="{Binding ServiceOrder.Meter.ServiceAddress}" Style="{StaticResource LblLong}" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="6"/>
+
+            <!--END LABELS-->
+
+        </Grid>
+        <!--END INNER GRID-->
+
+        <!--ACTIONS + INSTRUCTIONS (Right column) -->
+        <Grid x:Name="gridActions" Grid.Row="8" Grid.Column="1" ColumnDefinitions="*,*" Style="{StaticResource GridPadding}" BackgroundColor="White">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.ColumnSpan="1" Grid.Row="0"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="1" Grid.ColumnSpan="1" Grid.Row="0"/>
+            <Frame Style="{StaticResource FrameSODet}" Grid.Column="0" Grid.Row="1"/>
+            <Frame Style="{StaticResource FrameSODet}" Grid.Column="1" Grid.Row="1"/>
+            
+            <Label Grid.Column="0" Text="Requested Work" Style="{StaticResource Lbl}" TextDecorations="Underline" HorizontalTextAlignment="Center" Grid.Row="0"/>
+            <CollectionView  Grid.Column="0" ItemsSource="{Binding WorkItemsArray}" Margin="10" Grid.Row="1">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Label Text="{Binding .}" TextColor="Black" FontSize="15" LineBreakMode="WordWrap"
+                               HorizontalTextAlignment="Start" VerticalTextAlignment="Center"/>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label Text="Instructions"  Grid.Column="1" Grid.Row="0" Style="{StaticResource Lbl}" TextDecorations="Underline" HorizontalTextAlignment="Center" />
+            <ScrollView Margin="10" Grid.Row="1"  Grid.Column="1" >
+                <Label Text="{Binding ServiceOrder.SOInfo.Instructions}" TextColor="Black" FontSize="15" LineBreakMode="WordWrap"
+                       HorizontalTextAlignment="Start" VerticalTextAlignment="Start"/>
+            </ScrollView>
+
+            <!-- Action buttons placed at the bottom of the actions column -->
+            <StackLayout Orientation="Horizontal" Spacing="8" Grid.Row="2" Grid.ColumnSpan="2" HorizontalOptions="FillAndExpand" Padding="0,10,0,0">
+                <Button x:Name="btnUpdateSO" Text="Update Service Order" Command="{Binding GoTo_SOClosePage_Command}" Style="{StaticResource BtnActionSODet}" BackgroundColor="Green" HorizontalOptions="FillAndExpand"/>
+                <Button x:Name="btnCustDet" Text="Customer Details" Command="{Binding OpenCloseCustomerDetails_Command}" Style="{StaticResource BtnActionSODet}" HorizontalOptions="FillAndExpand"/>
+            </StackLayout>
+
+            <!--BOTTOM BUTTONS GRID-->
+            <Grid Grid.Column="0" Grid.ColumnSpan="2" ColumnSpacing="8"  RowSpacing="8" Grid.Row="3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="30" />
+                    <RowDefinition Height="30" />
+                </Grid.RowDefinitions>
+                <!--CHANGE SO BUTTONS-->
+                <ImageButton Source="first.png" Command="{Binding FirstSO_Command}"
+                             Style="{StaticResource ImgBtnBotBtns}" Grid.Column="0" Grid.Row="0"/>
+                <ImageButton Source="previous.png" Command="{Binding PreviousSO_Command}"
+                             Style="{StaticResource ImgBtnBotBtns}" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="0"/>
+                <ImageButton Source="next.png" Command="{Binding NextSO_Command}"
+                             Style="{StaticResource ImgBtnBotBtns}" Grid.Column="3" Grid.ColumnSpan="2" Grid.Row="0" />
+                <ImageButton Source="last.png" Command="{Binding LastSO_Command}"
+                             Style="{StaticResource ImgBtnBotBtns}" Grid.Column="5" Grid.Row="0"/>
+
+
+                <!--OPTIONS BUTTONS-->
+                <Button Text="Contact" Command="{Binding ContactCustomer_Command}" Style="{StaticResource BtnBotBtns}" Grid.Column="0"/>
+                <Button Text="Files" Command="{Binding GoTo_SOFilesPage_Command}" Style="{StaticResource BtnBotBtns}" Grid.Column="1"/>
+                <ImageButton Source="enternote.png" Command="{Binding GoTo_NotesPage_Command}"
+                             Style="{StaticResource ImgBtnBotBtns}" Grid.Column="2" Grid.Row="1"/>
+                <ImageButton Source="takephoto.png" Command="{Binding TakeSavePhoto_Command}"
+                             Style="{StaticResource ImgBtnBotBtns}" Grid.Column="3" Grid.Row="1"/>
+                <ImageButton Source="findroute.png" Command="{Binding OpenMaps_Command}"
+                             Style="{StaticResource ImgBtnBotBtns}" Grid.Column="4" Grid.Row="1"/>
+                <ImageButton Source="maplocation.png" Command="{Binding SaveCurrentLocation_Command}"
+                             Style="{StaticResource ImgBtnBotBtns}" Grid.Column="5" Grid.Row="1"/>
+
+                <!--OPTION BUTTON PHONE ONLY-->
+                <Button Text="Options" Command="{Binding SelectOption_Command}" Style="{StaticResource BtnBotBtns}"
+                        IsVisible="{OnIdiom Tablet=False, Phone=True}" Grid.ColumnSpan="6"/>
+
+            </Grid>
+            <!--END BOTTOM BUTTONS GRID-->
+        </Grid>
+
+        <!--MORE CUSTOMER DETAILS GRID-->
+        <BoxView BackgroundColor="#ac000000" IsVisible="{Binding ViewCustomerDetails}" Grid.ColumnSpan="2" Grid.RowSpan="8"/>
+        <Grid  x:Name="gridCustDet" Grid.Row="0" Grid.RowSpan="8" IsVisible="{Binding ViewCustomerDetails}" BackgroundColor="Transparent" Padding="8" Grid.Column="0"  Grid.ColumnSpan="2"
+              VerticalOptions="Center" HorizontalOptions="Center" Style="{StaticResource GridPadding}"
+             >
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup Name="AdaptiveStates">
+                    <VisualState x:Name="Wide">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="700" />
+                        </VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Property="Grid.Row" Value="1" />
+                            <Setter Property="Grid.RowSpan" Value="6" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Narrow">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="0" />
+                        </VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Property="Grid.Row" Value="0" />
+                            <Setter Property="Grid.RowSpan" Value="8" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="{OnIdiom Tablet=4, Phone=2}"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="{OnIdiom Tablet=4, Phone=2}"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="{OnIdiom Tablet=4, Phone=2}"/>
+            </Grid.RowDefinitions>
+
+            <!--FRAME + TITLE-->
+            <Border Style="{StaticResource BorderPopupBackground}" Grid.ColumnSpan="6" Grid.RowSpan="9"/>
+            <!-- Close button moved to the footer row of the popup grid -->
+            <Button x:Name="btnCustDetX" Command="{Binding OpenCloseCustomerDetails_Command}" IsVisible="{Binding ViewCustomerDetails}"
+Style="{StaticResource BtnPopupXOut}" Margin="0,-20,-20,0" Grid.ColumnSpan="6"/>
+
+
+            <Label Text="Customer Details" Style="{StaticResource f9LblPopupTitle}" Grid.ColumnSpan="6" Grid.Row="0"/>
+            <!--END-->
+
+            <!--BOX VIEWS-->
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="1" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="2" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="3" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="4" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="1" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="2" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="3" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="4" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="1" Grid.Row="3"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="2" Grid.Row="3"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="3" Grid.Row="3"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="4" Grid.Row="3"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="1" Grid.Row="4"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="2" Grid.Row="4"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="3" Grid.Row="4"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="4" Grid.Row="4"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="1" Grid.Row="5"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="2" Grid.Row="5"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="3" Grid.Row="5"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="4" Grid.Row="5"/>
+            <!--END BOX VIEWS-->
+
+            <!--LABELS-->
+            <Label Text="Current Bal:" Style="{StaticResource LblHeight}" Grid.Column="1" Grid.Row="1"/>
+            <Label Text="{Binding ServiceOrder.Customer.CurrentBalance}" Style="{StaticResource LblHeight}" Grid.Column="2" Grid.Row="1"/>
+            <Label Text="Past Due:" Style="{StaticResource LblHeight}" Grid.Column="3" Grid.Row="1"/>
+            <Label Text="{Binding ServiceOrder.Customer.PastDue}" Style="{StaticResource LblHeight}" Grid.Column="4" Grid.Row="1"/>
+            <Label Text="Last Payment:" Style="{StaticResource LblHeight}" Grid.Column="1" Grid.Row="2"/>
+            <Label Text="{Binding ServiceOrder.Customer.LastPaymentAmount}" Style="{StaticResource LblHeight}" Grid.Column="2" Grid.Row="2"/>
+            <Label Text="Date:" Style="{StaticResource LblHeight}" Grid.Column="3" Grid.Row="2"/>
+            <Label Text="{Binding ServiceOrder.Customer.LastPaymentDate}" Style="{StaticResource LblHeight}" Grid.Column="4" Grid.Row="2"/>
+            <Label Text="{Binding Misc1Name}" Style="{StaticResource LblHeight}" Grid.Column="1" Grid.Row="3"/>
+            <Label Text="{Binding ServiceOrder.Customer.Misc1Value}" Style="{StaticResource LblHeight}" Grid.Column="2" Grid.Row="3"/>
+            <Label Text="{Binding Misc2Name}" Style="{StaticResource LblHeight}" Grid.Column="3" Grid.Row="3"/>
+            <Label Text="{Binding ServiceOrder.Customer.Misc2Value}" Style="{StaticResource LblHeight}" Grid.Column="4" Grid.Row="3"/>
+            <Label Text="{Binding Misc3Name}" Style="{StaticResource LblHeight}" Grid.Column="1" Grid.Row="4"/>
+            <Label Text="{Binding ServiceOrder.Customer.Misc3Value}" Style="{StaticResource LblHeight}" Grid.Column="2" Grid.Row="4"/>
+            <Label Text="{Binding Misc4Name}" Style="{StaticResource LblHeight}" Grid.Column="3" Grid.Row="4"/>
+            <Label Text="{Binding ServiceOrder.Customer.Misc4Value}" Style="{StaticResource LblHeight}" Grid.Column="4" Grid.Row="4"/>
+            <Label Text="{Binding Misc5Name}" Style="{StaticResource LblHeight}" Grid.Column="1" Grid.Row="5"/>
+            <Label Text="{Binding ServiceOrder.Customer.Misc5Value}" Style="{StaticResource LblHeight}" Grid.Column="2" Grid.Row="5"/>
+            <Label Text="{Binding Misc6Name}" Style="{StaticResource LblHeight}" Grid.Column="3" Grid.Row="5"/>
+            <Label Text="{Binding ServiceOrder.Customer.Misc6Value}" Style="{StaticResource LblHeight}" Grid.Column="4" Grid.Row="5"/>
+
+            <!--END LABELS-->
+        </Grid>
+
+        <!--END MORE CUSTOMER DETAILS-->
+    </Grid>
+    
+    <!--END OUTER GRID-->
+</ContentPage>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodel="clr-namespace:EasyReader.ViewModels"
+             mc:Ignorable="d"
+             x:Class="EasyReader.Views.EmailPhotosPage"
+             BackgroundColor="White">
+
+    <ContentPage.BindingContext>
+        <viewmodel:EmailPhotosViewModel />
+    </ContentPage.BindingContext>
+
+    <Shell.TitleView>
+        <Label Text="Email Photos" Style="{StaticResource LblTitleView}" />
+    </Shell.TitleView>
+    <ContentPage.Resources>
+
+        <Style x:Key="BtnActionSOCl" TargetType="Button">
+            <Setter Property="BackgroundColor" Value="{StaticResource PrimaryOffset}"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="FontSize" Value="{OnIdiom Phone=11}"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Margin" Value="10, 0"/>
+            <Setter Property="Padding" Value="15, 5"/>
+
+            <Setter Property="VerticalOptions" Value="FillAndExpand"/>
+        </Style>
+    </ContentPage.Resources>
+
+    <Grid Style="{StaticResource GridPadding}" RowDefinitions="Auto,*,Auto">
+
+        <!-- Search / Sort header -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" RowDefinitions="*,*,*" Margin="0,6,0,0">
+            <Label Text="Select photos from Service Orders or Accounts to email" Grid.ColumnSpan="3"  Style="{StaticResource f9LblPopupTitle}" Grid.Row="0" />
+
+            <SearchBar Placeholder="Search by name or SO#" Grid.Row="1"  Text="{Binding SearchText}" Grid.Column="0" />
+            <Picker Title="Sort" SelectedItem="{Binding SortBy}" Grid.Row="1"  Grid.Column="1" WidthRequest="120">
+                <Picker.Items>
+                    <x:String>Name</x:String>
+                    <x:String>SONum</x:String>
+                    <x:String>Date</x:String>
+                </Picker.Items>
+            </Picker>
+            <Button Grid.Row="1" Grid.Column="2" WidthRequest="60" Command="{Binding ToggleSortOrder_Command}" BackgroundColor="Transparent"
+                    Text="{Binding SortOrderIcon}" TextColor="{StaticResource Primary}" FontSize="Large" />
+        </Grid>
+
+        <CollectionView ItemsSource="{Binding DisplayedSOFiles}" SelectionMode="None" Grid.Row="1" Margin="0,10,0,10">
+            <CollectionView.ItemTemplate>
+            <DataTemplate>
+                    <Grid ColumnDefinitions="40,*,Auto" Padding="5">
+                        <CheckBox IsChecked="{Binding IsSelected}" Color="{StaticResource Primary}" VerticalOptions="Center" Grid.Column="0" />
+                        <Label Text="{Binding Name}" TextColor="{StaticResource Primary}" VerticalTextAlignment="Center" Grid.Column="1" />
+                    <StackLayout Grid.Column="2" HorizontalOptions="End" VerticalOptions="Center">
+                        <Label Text="{Binding Tag}" TextColor="Gray" FontSize="Micro" HorizontalTextAlignment="End" />
+                        <Label Text="{Binding CreatedDate, StringFormat='{0:yyyy-MM-dd HH:mm}'}" TextColor="Gray" FontSize="Micro" HorizontalTextAlignment="End" />
+                    </StackLayout>
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto,Auto,Auto" HorizontalOptions="End" ColumnSpacing="8">
+            <Button Text="Open" Command="{Binding Open_Command}" Style="{StaticResource BtnActionSOCl}" Grid.Column="0" />
+            <Button Text="Rename" Command="{Binding Rename_Command}" Style="{StaticResource BtnActionSOCl}" Grid.Column="1" />
+            <Button Text="Delete" Command="{Binding Delete_Command}" Style="{StaticResource BtnActionSOCl}" Grid.Column="2" />
+            <Button Text="Email" Command="{Binding EmailSelected_Command}" Style="{StaticResource BtnActionSOCl}" Grid.Column="3" />
+        </Grid>
+    </Grid>
+</ContentPage>

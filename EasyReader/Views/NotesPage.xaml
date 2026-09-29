@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://schemas.microsoft.com/dotnet/2021/maui/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodel="clr-namespace:EasyReader.ViewModels"
+             mc:Ignorable="d"
+             x:Class="EasyReader.Views.NotesPage"
+             BackgroundColor="White">
+
+    <!-- VIEW MODEL + TITLE VIEW + TOOLBAR-->
+    <ContentPage.BindingContext>
+        <viewmodel:NotesViewModel/>
+    </ContentPage.BindingContext>
+    <Shell.TitleView>
+        <Label Text="{OnIdiom Tablet='Enter Note', Phone='Note'}" Style="{StaticResource LblTitleView}"/>
+    </Shell.TitleView>
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Back" Command="{Binding GoBack_Command}" Order="Primary" Priority="0"/>
+    </ContentPage.ToolbarItems>
+    <!--END-->
+    
+    <!--RESOURCES-->
+    <ContentPage.Resources>
+        <Style x:Key="BtnActionNote" TargetType="Button">
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="5, 1"/>
+            <Setter Property="Grid.ColumnSpan" Value="4"/>
+        </Style>
+    </ContentPage.Resources>
+    <!--END-->
+
+    <Grid x:Name="outerGrid" ColumnDefinitions="*,*" RowDefinitions="*">
+        <Grid x:Name="innerGrid" ColumnDefinitions="*,*,*,*" Style="{StaticResource GridPadding}" Grid.Row="0" Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="10"/>
+                <RowDefinition Height="Auto"/>
+                <!--extra space set in xaml.cs-->
+            </Grid.RowDefinitions>
+
+            <!--BOX VIEWS-->
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="0"/>
+            <BoxView Style="{StaticResource BoxValueLong}" Grid.ColumnSpan="3" Grid.Column="1" Grid.Row="0"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="2" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="3" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="2" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="3" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="3"/>
+            <BoxView Style="{StaticResource BoxValueLong}"  Grid.ColumnSpan="3"  Grid.Column="1" Grid.Row="3"/>
+            <!--END BOX VIEWS-->
+
+            <!--LABELS-->
+            <Label Text="Name:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="0"/>
+            <Label Text="{Binding NameLabel}" Style="{StaticResource LblLong}" Grid.Column="1" Grid.Row="0"/>
+            <Label Text="Route:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="1"/>
+            <Label Text="{Binding RouteLabel}" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="1"/>
+            <Label Text="Walk Seq:" Style="{StaticResource Lbl}" Grid.Column="2" Grid.Row="1"/>
+            <Label Text="{Binding WalkSeqLabel}" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="1"/>
+            <Label Text="Account #:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="2"/>
+            <Label Text="{Binding AccountNumLabel}" Style="{StaticResource Lbl}" Grid.Column="1" Grid.Row="2"/>
+            <Label Text="{Binding MeterOrSOName}" Style="{StaticResource Lbl}" Grid.Column="2" Grid.Row="2"/>
+            <Label Text="{Binding MeterOrSOLabel}" Style="{StaticResource Lbl}" Grid.Column="3" Grid.Row="2"/>
+            <Label Text="Address:" Style="{StaticResource Lbl}" Grid.Column="0" Grid.Row="3"/>
+            <Label Text="{Binding AddressLabel}" Style="{StaticResource LblLong}" Grid.Column="1" Grid.Row="3"/>
+            <!--END LABELS-->
+
+          
+        </Grid>
+
+        <Grid x:Name="actionBtnGrid" Grid.Column="1" Grid.Row="1" RowDefinitions="*,*,*,*" Style="{StaticResource GridPadding}" ColumnDefinitions="*"> 
+            <!--NOTE ENTRY-->
+            <BoxView BackgroundColor="{StaticResource PrimaryDkOffset}" CornerRadius="5" HorizontalOptions="FillAndExpand"
+    Grid.ColumnSpan="4" Grid.Row="0"/>
+            <Entry Text="{Binding NoteEntry}" Placeholder="Enter Note..." PlaceholderColor="Black" MaxLength="255"
+  TextColor="Black" BackgroundColor="Transparent" VerticalTextAlignment="{OnPlatform Android=End, iOS=Center}"
+  VerticalOptions="Center" HorizontalOptions="FillAndExpand" Grid.ColumnSpan="4" Grid.Row="0"/>
+            <Label Text="{Binding CharsRemainingLabel}" TextColor="Black" FontSize="10" HorizontalOptions="Center"
+  Grid.ColumnSpan="4" Grid.Row="1"/>
+            <!--END NOTE ENTRY-->
+
+            <!--SAVE + DELETE BUTTONS-->
+            <Button Text="Save Note" Command="{Binding SaveNote_Command}" Style="{StaticResource BtnActionNote}" BackgroundColor="Green" Grid.Row="2"/>
+            <Button Text="Delete Note" Command="{Binding DeleteNote_Command}" Style="{StaticResource BtnActionNote}" BackgroundColor="Red" Grid.Row="3"/>
+            <!--END SAVE + DELETE BUTTONS-->
+        </Grid>
+    </Grid>
+   
+</ContentPage>

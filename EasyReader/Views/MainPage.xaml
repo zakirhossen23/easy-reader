@@ -1,0 +1,202 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:shapes="clr-namespace:Microsoft.Maui.Controls.Shapes;assembly=Microsoft.Maui.Controls"
+             xmlns:d="http://schemas.microsoft.com/dotnet/2021/maui/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodel="clr-namespace:EasyReader.ViewModels"
+             xmlns:local="clr-namespace:EasyReader.Views"
+             mc:Ignorable="d"
+             x:Class="EasyReader.Views.MainPage"
+             BackgroundColor="White">
+
+    <!--VIEW MODEL-->
+    <ContentPage.BindingContext>
+        <viewmodel:MainViewModel/>
+    </ContentPage.BindingContext>
+    <!--END-->
+
+    <!--RESOURCES-->
+    <ContentPage.Resources>        
+        <RowDefinitionCollection x:Key="RowsBtnMain">
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="{OnIdiom Tablet=50, Phone=22}"/>
+        </RowDefinitionCollection>
+
+        <Style x:Key="GridBtnMain" TargetType="Grid">
+            <Setter Property="RowSpacing" Value="0"/>
+            <Setter Property="RowDefinitions" Value="{StaticResource RowsBtnMain}"/>
+        </Style>
+
+        <Style x:Key="ImgBtnMain" TargetType="ImageButton">
+            <Setter Property="Aspect" Value="AspectFit"/>
+            <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="CornerRadius" Value="10"/>
+        </Style>
+
+        <!-- Replaced f9p:Label style with standard Label style -->
+        <Style x:Key="LblBtnMain" TargetType="Label">
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="FontSize" Value="{OnIdiom Tablet=18, Phone=11}"/>
+            <Setter Property="FontAttributes" Value="Bold"/>
+            <Setter Property="VerticalTextAlignment" Value="Center"/>
+            <Setter Property="HorizontalTextAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="4,0,4,4"/>
+            <Setter Property="Grid.Row" Value="1"/>
+            <Setter Property="LineBreakMode" Value="TailTruncation"/>
+            <Setter Property="MaxLines" Value="2"/>
+        </Style>
+    </ContentPage.Resources>
+    <!--END RESOURCES-->
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="*" Padding="8,6,8,6">
+        <!--HEADER GRID-->
+        <Grid Grid.Row="0" RowSpacing="5" ColumnDefinitions="2*, 3*">
+            <Grid.RowDefinitions>
+                 <RowDefinition Height="{OnIdiom Tablet=36, Phone=26}"/>
+                <RowDefinition Height="{OnIdiom Tablet=36, Phone=26}"/>
+                <RowDefinition Height="{OnIdiom Tablet=36, Phone=26}"/>
+            </Grid.RowDefinitions>
+
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="0"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="0"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="2"/>
+
+            <Label Text="Reader Description:" Style="{StaticResource LblLarge}" Grid.Column="0" Grid.Row="0"/>
+            <Label Text="{Binding Properties.ReaderDescription}" Style="{StaticResource LblLarge}" HorizontalTextAlignment="Center"
+                   Grid.Column="1" Grid.Row="0"/>
+            <Label Text="Missing Readings:" Style="{StaticResource LblLarge}" Grid.Column="0" Grid.Row="1"/>
+            <Label Text="{Binding MissingReadingsStatusLabel}" Style="{StaticResource LblLarge}" HorizontalTextAlignment="Center"
+                   Grid.Column="1" Grid.Row="1"/>
+            <Label Style="{StaticResource LblLarge}" Grid.Column="0" Grid.Row="2">
+                <Label.Text>
+                    <OnIdiom x:TypeArguments="x:String" Tablet="Open Service Orders:" Phone="Open SO's:"/>
+                </Label.Text>
+            </Label>
+            <Label Text="{Binding OpenSOsStatusLabel}" Style="{StaticResource LblLarge}" HorizontalTextAlignment="Center"
+                   Grid.Column="1" Grid.Row="2"/>
+        </Grid>
+        <!--END HEADER GRID-->
+
+         <!--HEADER LABEL-->
+         <Label Grid.Row="1" Text="Main Menu" TextColor="{StaticResource Primary}" FontSize="{OnIdiom Tablet=40, Phone=26}"
+             FontAttributes="Bold" HorizontalOptions="Center"/>
+         <!--END-->
+
+        <!--NAVIGATION: 3x3 Grid for perfect uniform tiles -->
+        <Grid x:Name="ButtonLinks" Grid.Row="2" ColumnSpacing="10" RowSpacing="10" ColumnDefinitions="*,*,*" RowDefinitions="*,*,*">
+
+            <!-- Row 0 -->
+            <Frame Grid.Row="0" Grid.Column="0" HasShadow="False" Padding="0" CornerRadius="10" BackgroundColor="{StaticResource Primary}" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
+                <Grid RowDefinitions="3*,Auto">
+                    <!-- removed inner rounded white backdrop to eliminate visible white circle -->
+                    <ImageButton Grid.Row="0" Source="enterreadings.png" Command="{Binding GoTo_EnterReadingsPage_Command}" Style="{StaticResource ImgBtnMain}" HorizontalOptions="Center" VerticalOptions="Center"/>
+                    <Label Text="Enter Readings" Style="{StaticResource LblBtnMain}" Grid.Row="1"/>
+                </Grid>
+            </Frame>
+
+            <Frame Grid.Row="0" Grid.Column="1" HasShadow="False" Padding="0" CornerRadius="10" BackgroundColor="{StaticResource Primary}" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
+                <Grid RowDefinitions="3*,Auto">
+                    <!-- removed inner rounded white backdrop for About tile to eliminate visible white circle -->
+                    <ImageButton Grid.Row="0" Source="missingreadings.png" Command="{Binding GoTo_MissingReadingsPage_Command}" Style="{StaticResource ImgBtnMain}" HorizontalOptions="Center" VerticalOptions="Center"/>
+                    <Label Text="Missing Readings" Style="{StaticResource LblBtnMain}" Grid.Row="1"/>
+                </Grid>
+            </Frame>
+
+            <Frame Grid.Row="0" Grid.Column="2" HasShadow="False" Padding="0" CornerRadius="10" BackgroundColor="{StaticResource Primary}" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
+                <Grid RowDefinitions="3*,Auto">
+                    <!-- inner white rounded backdrop removed to eliminate visible white circle -->
+                    <ImageButton Grid.Row="0" Source="accountdetails.png" Command="{Binding GoTo_AccountDetailsPage_Command}" Style="{StaticResource ImgBtnMain}" HorizontalOptions="Center" VerticalOptions="Center"/>
+                    <Label Text="Account Details" Style="{StaticResource LblBtnMain}" Grid.Row="1"/>
+                </Grid>
+            </Frame>
+
+            <!-- Row 1 -->
+            <Frame Grid.Row="1" Grid.Column="0" HasShadow="False" Padding="0" CornerRadius="10" BackgroundColor="{StaticResource Primary}" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
+                <Grid RowDefinitions="3*,Auto">
+                    <Frame Grid.Row="0" HasShadow="False" BackgroundColor="White" Opacity="0.06" CornerRadius="12" Margin="14" Padding="0" />
+                    <ImageButton Grid.Row="0" Source="searchaccounts.png" Command="{Binding GoTo_SearchPage_Command}" Style="{StaticResource ImgBtnMain}" HorizontalOptions="Center" VerticalOptions="Center"/>
+                    <Label Text="Search Accounts" Style="{StaticResource LblBtnMain}" Grid.Row="1"/>
+                </Grid>
+            </Frame>
+
+            <Frame Grid.Row="1" Grid.Column="1" HasShadow="False" Padding="0" CornerRadius="10" BackgroundColor="{StaticResource Primary}" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
+                <Grid RowDefinitions="3*,Auto">
+                    <Frame Grid.Row="0" HasShadow="False" BackgroundColor="White" Opacity="0.06" CornerRadius="12" Margin="14" Padding="0" />
+                    <ImageButton Grid.Row="0" Source="filemanager.png" Command="{Binding GoTo_FileManagerPage_Command}" Style="{StaticResource ImgBtnMain}" HorizontalOptions="Center" VerticalOptions="Center"/>
+                    <Label Text="File Manager" Style="{StaticResource LblBtnMain}" Grid.Row="1"/>
+                </Grid>
+            </Frame>
+
+            <Frame Grid.Row="1" Grid.Column="2" HasShadow="False" Padding="0" CornerRadius="10" BackgroundColor="{StaticResource Primary}" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
+                <Grid RowDefinitions="3*,Auto">
+                    <Frame Grid.Row="0" HasShadow="False" BackgroundColor="White" Opacity="0.00" CornerRadius="12" Margin="14" Padding="0" />
+                    <ImageButton Grid.Row="0" Source="servicerequest.png" Command="{Binding GoTo_SODetailsPage_Command}" Style="{StaticResource ImgBtnMain}" HorizontalOptions="Center" VerticalOptions="Center"/>
+                    <Label Text="Service Orders" Style="{StaticResource LblBtnMain}" Grid.Row="1"/>
+                </Grid>
+            </Frame>
+
+            <!-- Row 2 -->
+            <!-- About tile: updated to match provided double-ring design -->
+            <Frame Grid.Row="2" Grid.Column="0" HasShadow="False" Padding="0" CornerRadius="10" BackgroundColor="{StaticResource Primary}" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
+                <Grid RowDefinitions="3*,Auto">
+                    <Frame Grid.Row="0" HasShadow="False" Opacity="0.00" CornerRadius="12" Margin="14" Padding="0" />
+
+                    <!-- Circular stylized double-ring icon centered (outer solid, inner dashed with ticks, small inner ring and info glyph) -->
+                    <!-- Use AbsoluteLayout to precisely place segmented ticks/circles to match reference -->
+                    <AbsoluteLayout Grid.Row="0" HeightRequest="{OnIdiom Tablet=170, Phone=72}" WidthRequest="{OnIdiom Tablet=170, Phone=72}" HorizontalOptions="Center" VerticalOptions="Center">
+                        <!-- Outer solid ring -->
+                        <shapes:Ellipse Stroke="White" StrokeThickness="{OnIdiom Tablet=6, Phone=3}" Fill="Transparent"
+                                        AbsoluteLayout.LayoutBounds="0.5,0.5,0.90,0.90" AbsoluteLayout.LayoutFlags="PositionProportional,SizeProportional" />
+
+                        <!-- Dashed/multi-segment ring (smaller, sits inside outer ring) -->
+                        <shapes:Ellipse Stroke="White" StrokeThickness="{OnIdiom Tablet=5, Phone=2}" Fill="Transparent"
+                                        StrokeDashArray="2,8" StrokeDashOffset="0"
+                                        AbsoluteLayout.LayoutBounds="0.5,0.5,0.66,0.66" AbsoluteLayout.LayoutFlags="PositionProportional,SizeProportional" />
+
+                        <!-- Small inner thin ring for layered look -->
+                        <shapes:Ellipse Stroke="White" StrokeThickness="{OnIdiom Tablet=2.5, Phone=1.6}" Fill="Transparent"
+                                        AbsoluteLayout.LayoutBounds="0.5,0.5,0.34,0.34" AbsoluteLayout.LayoutFlags="PositionProportional,SizeProportional" />
+
+                        <!-- Center info glyph (scales via OnIdiom) -->
+                        <Label Text="ℹ" TextColor="White" FontSize="{OnIdiom Tablet=48, Phone=26}" FontAttributes="Bold"
+                               AbsoluteLayout.LayoutBounds="0.5,0.5,AutoSize,AutoSize" AbsoluteLayout.LayoutFlags="PositionProportional" />
+
+                        <AbsoluteLayout.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding GoTo_AboutPage_Command}" />
+                        </AbsoluteLayout.GestureRecognizers>
+                    </AbsoluteLayout>
+
+                    <Label Text="About" Style="{StaticResource LblBtnMain}" Grid.Row="1" />
+                </Grid>
+            </Frame>
+
+            <Frame Grid.Row="2" Grid.Column="1" HasShadow="False" Padding="0" CornerRadius="10" BackgroundColor="{StaticResource Primary}" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
+                <Grid RowDefinitions="3*,Auto">
+                    <Frame Grid.Row="0" HasShadow="False" BackgroundColor="White" Opacity="0.06" CornerRadius="12" Margin="14" Padding="0" />
+                    <ImageButton Grid.Row="0" Source="takephoto.png" Command="{Binding GoTo_EmailPhotosPage_Command}" Style="{StaticResource ImgBtnMain}" HorizontalOptions="Center" VerticalOptions="Center"/>
+                    <Label Text="Email Photos" Style="{StaticResource LblBtnMain}" Grid.Row="1"/>
+                </Grid>
+            </Frame>
+
+            <Frame Grid.Row="2" Grid.Column="2" HasShadow="False" Padding="0" CornerRadius="10" BackgroundColor="{StaticResource Primary}" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
+                <Grid RowDefinitions="3*,Auto">
+                    <Frame Grid.Row="0" HasShadow="False" BackgroundColor="White" Opacity="0.06" CornerRadius="12" Margin="14" Padding="0" />
+                    <ImageButton Grid.Row="0" Source="settings.png" Command="{Binding GoTo_SettingsPage_Command}" Style="{StaticResource ImgBtnMain}" HorizontalOptions="Center" VerticalOptions="Center"/>
+                    <Label Text="Settings" Style="{StaticResource LblBtnMain}" Grid.Row="1"/>
+                </Grid>
+            </Frame>
+
+        </Grid>
+
+         <!-- Footer version note -->
+         <Label Grid.Row="3" Text="EasyReader v2.1.18" HorizontalOptions="Center" HorizontalTextAlignment="Center"
+             VerticalOptions="End" FontSize="{OnIdiom Tablet=14, Phone=12}" TextColor="Gray" Margin="0,8,0,0"/>
+
+        </Grid>
+</ContentPage>

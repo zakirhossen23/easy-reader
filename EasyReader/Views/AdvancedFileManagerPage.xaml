@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodel="clr-namespace:EasyReader.ViewModels"
+             xmlns:local="clr-namespace:EasyReader.Views"
+             mc:Ignorable="d"
+             x:Class="EasyReader.Views.AdvancedFileManagerPage"
+             BackgroundColor="White">
+
+    <!-- VIEW MODEL + TITLE VIEW + TOOLBAR-->
+    <ContentPage.BindingContext>
+        <viewmodel:FileManagerViewModel/>
+    </ContentPage.BindingContext>
+    <Shell.TitleView>
+        <Label Text="{OnIdiom Tablet='Advanced File Manager', Phone='Adv. Files'}" Style="{StaticResource LblTitleView}"/>
+    </Shell.TitleView>
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Home" Command="{Binding GoTo_MainPage_Command}" Order="Primary" Priority="0"/>
+        <ToolbarItem IconImageSource="settings.png" Command="{Binding GoTo_SettingsPage_Command}" Order="Primary" Priority="1"/>
+    </ContentPage.ToolbarItems>
+    <!--END-->
+
+    <!--RESOURCES-->
+    <ContentPage.Resources>
+        <Style x:Key="FrameFM" TargetType="Frame">
+            <Setter Property="BorderColor" Value="{StaticResource PrimaryDkOffset}"/>
+            <Setter Property="BackgroundColor" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="HasShadow" Value="False"/>
+        </Style>
+        <Style x:Key="BtnActionFM" TargetType="Button">
+            <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="FontSize" Value="{OnIdiom Phone=10}"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Margin" Value="10, 0"/>
+            <Setter Property="Padding" Value="8, 1"/>
+        </Style>
+        <Style x:Key="ImgActionBtnFM" TargetType="Image">
+            <Setter Property="Aspect" Value="AspectFit"/>
+            <Setter Property="Margin" Value="15, 5"/>
+            <Setter Property="HorizontalOptions" Value="Start"/>
+        </Style>
+    </ContentPage.Resources>
+    <!--END-->
+
+    <!--OUTER GRID-->
+    <Grid Style="{StaticResource GridPadding}" RowSpacing="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="{OnIdiom Tablet=140, Phone=100}"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!--FILE STATUS GRID-->
+        <Grid ColumnDefinitions="2*, 3*" RowSpacing="5" Grid.Row="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="{OnIdiom Tablet=36, Phone=26}"/>
+                <RowDefinition Height="{OnIdiom Tablet=36, Phone=26}"/>
+                <RowDefinition Height="{OnIdiom Tablet=36, Phone=26}"/>
+            </Grid.RowDefinitions>
+
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="0"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="0"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="1"/>
+            <BoxView Style="{StaticResource BoxName}" Grid.Column="0" Grid.Row="2"/>
+            <BoxView Style="{StaticResource BoxValue}" Grid.Column="1" Grid.Row="2"/>
+
+            <Label Text="Missing Readings:" Style="{StaticResource LblLarge}" Grid.Column="0" Grid.Row="0"/>
+            <Label Text="{Binding MissingReadingsStatusLabel}" Style="{StaticResource LblLarge}" HorizontalTextAlignment="Center"
+                   Grid.Column="1" Grid.Row="0"/>
+            <Label Text="Open Service Orders:" Style="{StaticResource LblLarge}" Grid.Column="0" Grid.Row="1"/>
+            <Label Text="{Binding OpenSOsStatusLabel}" Style="{StaticResource LblLarge}" HorizontalTextAlignment="Center"
+                   Grid.Column="1" Grid.Row="1"/>
+            <Label Text="Readings File Name:" Style="{StaticResource LblLarge}" Grid.Column="0" Grid.Row="2"/>
+            <Label Text="{Binding ReadingsFileNameLabel}" Style="{StaticResource LblLarge}" HorizontalTextAlignment="Center"
+                   Grid.Column="1" Grid.Row="2"/>
+        </Grid>
+        <!--END FILE STATUS GRID-->
+
+        <!--FILE MANAGEMENT GRID-->
+        <Grid  Grid.Row="1" >
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+                <!--between button and frame-->
+                <RowDefinition  x:Name="rowExtraSpace"/>
+                <!--extra space value set in xaml.cs-->
+            </Grid.RowDefinitions>
+
+            <!--ADVANCED FEATURES-->
+            <Frame Style="{StaticResource FrameFM}" Grid.RowSpan="6"/>
+            <Label Text="Advanced Features" Style="{StaticResource f9LblHeader}" FontSize="30" Grid.Row="0"/>
+            <Grid x:Name="featuresGrid"  ColumnDefinitions="*" RowDefinitions="*,*" Grid.Row="1" >
+                <Grid Style="{StaticResource GridPadding}" Grid.Column="0" Grid.Row="0" RowDefinitions="*,*" >
+                    <Button Text="Reload Old Readings File" Command="{Binding DownloadBackupReadingsFile_Command}"
+Style="{StaticResource BtnActionFM}" Grid.Row="0"/>
+                    <Image Source="Icons/loadFile.png" Style="{StaticResource ImgActionBtnFM}" Grid.Row="0"/>
+                    <Button Text="Reload Backed Up Accounts" Command="{Binding DownloadBackupReadings_Command}"
+Style="{StaticResource BtnActionFM}" Grid.Row="1"/>
+                    <Image Source="Icons/loadFile.png" Style="{StaticResource ImgActionBtnFM}" Grid.Row="1"/>
+                </Grid>
+                <Grid Style="{StaticResource GridPadding}" Grid.Column="1"  Grid.Row="1" RowDefinitions="*,*" >
+
+                    <Button Text="Reload Old Service Order File" Command="{Binding GetFromBackup_SOFile_Command}"
+         Style="{StaticResource BtnActionFM}" Grid.Row="0"/>
+                    <Image Source="Icons/loadFile.png" Style="{StaticResource ImgActionBtnFM}" Grid.Row="0"/>
+                    <Button Text="Delete Service Order" Command="{Binding DeleteSO_Command}"
+         Style="{StaticResource BtnActionFM}" BackgroundColor="Red" Grid.Row="1"/>
+                    <Image Source="Icons/delete.png" Style="{StaticResource ImgActionBtnFM}" Grid.Row="1"/>
+                </Grid>
+            </Grid>
+           
+            <!--END ADVANCED FEATURES-->
+        </Grid>
+        <!--END FILE MANAGEMENT GRID-->
+    </Grid>
+    <!--END OUTER GRID-->
+</ContentPage>
