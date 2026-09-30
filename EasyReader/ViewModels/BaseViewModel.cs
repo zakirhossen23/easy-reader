@@ -351,12 +351,28 @@ namespace EasyReader.ViewModels
         // STORAGE PERMISSIONS
         public async Task CheckRequestStoragePermissionsAsync()
         {
-            var storageReadStatus = await Permissions.CheckStatusAsync<Permissions.StorageRead>();
-            var storageWriteStatus = await Permissions.CheckStatusAsync<Permissions.StorageWrite>();
-            if (storageReadStatus != PermissionStatus.Granted || storageWriteStatus != PermissionStatus.Granted)
+            try
             {
-                await Permissions.RequestAsync<Permissions.StorageRead>();
-                await Permissions.RequestAsync<Permissions.StorageWrite>();
+#if IOS || MACCATALYST
+                // App files live in the sandbox on Apple platforms - no
+                // runtime storage permission exists or is needed. Requesting
+                // StorageRead/StorageWrite here throws and aborts the caller
+                // (seen as "nothing happens" after tapping download on iOS).
+                return;
+#else
+                var storageReadStatus = await Permissions.CheckStatusAsync<Permissions.StorageRead>();
+                var storageWriteStatus = await Permissions.CheckStatusAsync<Permissions.StorageWrite>();
+                if (storageReadStatus != PermissionStatus.Granted || storageWriteStatus != PermissionStatus.Granted)
+                {
+                    await Permissions.RequestAsync<Permissions.StorageRead>();
+                    await Permissions.RequestAsync<Permissions.StorageWrite>();
+                }
+#endif
+            }
+            catch
+            {
+                // Permissions are best-effort: never let a permission failure
+                // silently cancel the download behind it.
             }
         }
 

@@ -178,9 +178,15 @@ namespace EasyReader.ViewModels
                 client.Config.EncryptionMode = FtpEncryptionMode.None;
                 client.Config.SslProtocols = System.Security.Authentication.SslProtocols.None;
                 client.Config.DataConnectionType = FtpDataConnectionType.PASV;
+                // Fail fast with an error dialog instead of spinning forever
+                // on a dead/flaky connection (reported as "nothing happens").
+                client.Config.ConnectTimeout = 15000;
+                client.Config.ReadTimeout = 15000;
+                client.Config.DataConnectionConnectTimeout = 15000;
+                client.Config.DataConnectionReadTimeout = 15000;
                 client.Encoding = Encoding.UTF8;
                 await client.Connect();
-                string workingDirectory = "/" + Properties.HostFolder + "/MeterReadings/TOCLIENT/";
+                string workingDirectory = "/" + Properties.HostFolder.Trim() + "/MeterReadings/TOCLIENT/";
 
                 // TESTING
                 //string workingDirectory = "/Gretchen/MeterReadings/TOCLIENT/";
@@ -190,7 +196,11 @@ namespace EasyReader.ViewModels
                 string[] fileNames = ftpItems
                     .Where(item => item.Type == FtpObjectType.File)
                     .Select(item => item.Name).ToArray();
-                AppServices.UserDialogs.HideLoading();
+                // Await the pop: on iOS a DisplayActionSheet/DisplayAlert shown
+                // while the loading modal is still on top is silently dropped,
+                // which looks like "nothing happens after Get from Cloud".
+                await AppServices.UserDialogs.HideLoadingAsync();
+                await Task.Delay(300);
 
                 // return if no files in folder
                 if (fileNames.Count() == 0)
@@ -305,14 +315,17 @@ namespace EasyReader.ViewModels
                 ReadingsFileNameLabel = Properties.ReadingsFileName;
 
                 // alert success, return to main page
-                AppServices.UserDialogs.HideLoading();
+                await AppServices.UserDialogs.HideLoadingAsync();
+                await Task.Delay(300);
                 await Application.Current.MainPage.DisplayAlert("Success", "Readings file successfully downloaded from server.", "OK");
              
                 await GoTo_MainPageAsync_(Navigation);
             }
             catch (Exception ex)
             {
-                AppServices.UserDialogs.HideLoading();
+                // Await the pop before alerting, or iOS drops the alert.
+                await AppServices.UserDialogs.HideLoadingAsync();
+                await Task.Delay(300);
                 // socket = no wifi while trying to connect to ftp server
                 // io = lost connection while trying to connect to ftp server
                 if (ex is SocketException || ex is IOException)

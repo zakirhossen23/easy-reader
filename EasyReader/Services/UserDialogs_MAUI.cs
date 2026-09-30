@@ -142,35 +142,44 @@ namespace EasyReader.Services
 
         public void HideLoading()
         {
+            _ = HideLoadingAsync();
+        }
+
+        public async Task HideLoadingAsync()
+        {
             if (App.Current?.MainPage == null) return;
 
-            MainThread.BeginInvokeOnMainThread(async () =>
+            bool shouldPop = false;
+            await _loadingLock.WaitAsync();
+            try
             {
-                bool shouldPop = false;
-                await _loadingLock.WaitAsync();
-                try
-                {
-                    if (_loadingCount > 0) _loadingCount--;
-                    shouldPop = _loadingCount == 0 && _loadingPage != null;
-                }
-                finally
-                {
-                    _loadingLock.Release();
-                }
-                if (!shouldPop) return;
-                try
-                {
+                if (_loadingCount > 0) _loadingCount--;
+                shouldPop = _loadingCount == 0 && _loadingPage != null;
+            }
+            finally
+            {
+                _loadingLock.Release();
+            }
+            if (!shouldPop) return;
+            try
+            {
+                // Must run on the UI thread; awaiting here (instead of
+                // fire-and-forget) guarantees the modal is gone before the
+                // caller presents an alert / action sheet on iOS.
+                if (MainThread.IsMainThread)
                     await App.Current.MainPage.Navigation.PopModalAsync(false);
-                }
-                catch
-                {
-                    // ignore
-                }
-                finally
-                {
-                    _loadingPage = null;
-                }
-            });
+                else
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                        App.Current.MainPage.Navigation.PopModalAsync(false));
+            }
+            catch
+            {
+                // ignore
+            }
+            finally
+            {
+                _loadingPage = null;
+            }
         }
 
         public IProgressDialog Progress(string title, string? cancelText, string? title2, bool show, MaskType maskType)

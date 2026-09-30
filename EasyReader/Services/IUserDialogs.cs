@@ -19,6 +19,10 @@ namespace EasyReader.Services
 
         void ShowLoading(string title, MaskType maskType = MaskType.None);
         void HideLoading();
+        // Awaitable pop of the loading modal. Use before showing an alert /
+        // action sheet on iOS: the fire-and-forget HideLoading() may not have
+        // popped yet, and iOS drops a second modal presented on top of it.
+        Task HideLoadingAsync();
         IProgressDialog Progress(string title, string? cancelText, string? title2, bool show, MaskType maskType);
     }
 }
