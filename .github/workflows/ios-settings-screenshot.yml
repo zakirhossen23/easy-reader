@@ -185,7 +185,7 @@ jobs:
           xcrun simctl install "$SIM_UDID" "$APP_PATH"
           xcrun simctl launch "$SIM_UDID" "$BUNDLE_ID"
 
-      # Settings -> Host Folder -> Home -> File Manager, screenshotting each leg.
+      # Settings -> Host Folder -> Home -> File Manager -> Download New Readings -> Get from Cloud, screenshotting each leg.
       - name: Walk the UI journey and capture screenshots
         run: |
           python3 .github/scripts/ios_settings_screenshot.py \

@@ -8,7 +8,10 @@ Flow, exactly as a user would do it - each screenshot is numbered by step:
     4. tap the nav bar's "Home" item to return         -> 04-home-again.png
     5. tap the "File Manager" tile                     -> 05-file-manager.png
     6. tap "Download New Readings", screenshot the
-       dialog it raises, then cancel it                -> 06-download-readings-alert.png
+       dialog it raises                                -> 06-download-readings-alert.png
+    7. tap "Get from Cloud", screenshot whatever the
+       server returns, then dismiss back to the
+       File Manager                                    -> 07-download-from-cloud.png
 
 Accessibility-tree dumps are saved alongside as tree-*.json (not numbered, so
 the numbers belong to the screenshots alone).
@@ -278,8 +281,9 @@ def download_new_readings(driver):
 
     On a fresh install the next thing on screen is the action sheet
     ("How would you like to download accounts?"); if a readings file is
-    already loaded it is the overwrite warning instead. Either way the dialog
-    is captured and then cancelled, so nothing is actually downloaded.
+    already loaded it is the overwrite warning instead, which is confirmed
+    so the sheet is reached. The sheet is left open for the caller to tap
+    "Get from Cloud" next - nothing is dismissed here.
     """
     _node, frame = driver.wait_for(
         lambda nodes: find_tappable(nodes, "Download New Readings"),
@@ -297,27 +301,102 @@ def download_new_readings(driver):
     log(f"  dialog shown: {label_of(alert[0])!r}")
     driver.screenshot("06-download-readings-alert.png")
 
-    # Cancel (present on both dialogs) until the app is genuinely back on the
-    # File Manager page. A re-presented or second dialog (e.g. a late background
-    # maintenance alert) can dismiss the first sheet, so a single tap is not
-    # always enough - keep dismissing, then require the destination page.
-    for round_num in (1, 2, 3):
-        cancel = find_tappable(driver.tree(), "Cancel")
-        if not cancel:
-            raise SystemExit("no Cancel button on the dialog to back out with")
-        log(f"  tap Cancel (round {round_num})")
-        driver.tap(*center(cancel[1]))
-        driver.quiet(15)
-        nodes = driver.tree()
-        if find_label(nodes, "Manage Readings") and not (
-            find_label(nodes, "How would you like to download accounts?")
-            or find_label(nodes, "Warning!")
-        ):
-            log("  dialog cancelled, back on the File Manager")
-            return
-        log("  !! dialog still present, dismissing again")
+    # Overwrite path: a loaded readings file raises "Warning!" first.
+    # Confirm it so the "How would you like..." sheet comes up.
+    if label_of(alert[0]).strip().casefold() == "warning!":
+        overwrite = find_tappable(driver.tree(), "Yes, overwrite file")
+        if not overwrite:
+            raise SystemExit('no "Yes, overwrite file" button to confirm with')
+        log('  tap "Yes, overwrite file"')
+        driver.tap(*center(overwrite[1]))
+        driver.quiet(20)
+        driver.wait_for(
+            lambda nodes: find_label(
+                nodes, "How would you like to download accounts?"
+            ),
+            'the "How would you like to download accounts?" sheet',
+            timeout=60,
+        )
+        driver.screenshot("06-download-readings-alert.png")
 
-    raise SystemExit("the dialog would not dismiss after 3 Cancel taps")
+
+def download_from_cloud(driver):
+    """Tap "Get from Cloud" and screenshot whatever the server returns.
+
+    After the tap the app connects to the FTP host set in Settings. What
+    appears next depends on the server, so any of these is accepted:
+      - "Download New Readings" file picker (files found)
+      - "No Files Found" / "No Host Folder" / "Error" /
+        "No Internet Connection" / "Success" alert (OK button)
+    The result is captured as 07, then every dialog is dismissed until the
+    app is back on the File Manager page.
+    """
+    cloud = find_tappable(driver.tree(), "Get from Cloud")
+    if not cloud:
+        raise SystemExit('no "Get from Cloud" button on the download sheet')
+    log('  tap "Get from Cloud"')
+    driver.tap(*center(cloud[1]))
+    # FTP connect + listing takes a while; quiet also settles the loading UI.
+    driver.quiet(25)
+
+    nodes = driver.tree(tag="tree-after-get-from-cloud")
+    for title in (
+        "Download New Readings",
+        "No Files Found",
+        "No Host Folder",
+        "Error",
+        "No Internet Connection",
+        "Success",
+        "How would you like to download accounts?",
+        "Warning!",
+    ):
+        hit = find_label(nodes, title)
+        if hit:
+            log(f"  result dialog: {label_of(hit[0])!r}")
+            break
+    driver.screenshot("07-download-from-cloud.png")
+
+    # Dismiss everything until the File Manager is visible again. Action
+    # sheets offer Cancel, alerts offer OK ("No Host Folder" offers both
+    # "Go to Settings" and OK - prefer OK to stay on this page).
+    for round_num in (1, 2, 3, 4, 5):
+        nodes = driver.tree()
+        back_on_page = bool(find_label(nodes, "Manage Readings"))
+        dialog_open = any(
+            find_label(nodes, t)
+            for t in (
+                "How would you like to download accounts?",
+                "Warning!",
+                "Download New Readings",
+                "Download Imported Accounts",
+                "No Files Found",
+                "No Host Folder",
+                "Error",
+                "No Internet Connection",
+                "Success",
+            )
+        )
+        if back_on_page and not dialog_open:
+            log("  dialogs dismissed, back on the File Manager")
+            return
+        cancel = find_tappable(nodes, "Cancel")
+        if cancel:
+            log(f"  tap Cancel (round {round_num})")
+            driver.tap(*center(cancel[1]))
+            driver.quiet(15)
+            continue
+        ok = find_tappable(nodes, "OK")
+        if ok:
+            log(f"  tap OK (round {round_num})")
+            driver.tap(*center(ok[1]))
+            driver.quiet(15)
+            continue
+        if back_on_page:
+            log("  no Cancel/OK left and File Manager is showing - done")
+            return
+        raise SystemExit("no Cancel/OK button to dismiss the cloud result with")
+
+    raise SystemExit("the cloud result dialog would not dismiss after 5 taps")
 
 
 def fill_host_folder(driver, text):
@@ -447,12 +526,13 @@ def main():
         return 1
 
     # Continue the journey from a known-good Settings page: back to the Main
-    # Menu, then into the File Manager, then provoke (and cancel) the
-    # Download New Readings dialog.
+    # Menu, then into the File Manager, then Download New Readings ->
+    # Get from Cloud, capturing each dialog.
     try:
         go_home(driver)
         open_file_manager(driver)
         download_new_readings(driver)
+        download_from_cloud(driver)
     except SystemExit as exc:
         log(f"FAILED: {exc}")
         return 1
