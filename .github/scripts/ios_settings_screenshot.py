@@ -10,8 +10,10 @@ Flow, exactly as a user would do it - each screenshot is numbered by step:
     6. tap "Download New Readings", screenshot the
        dialog it raises                                -> 06-download-readings-alert.png
     7. tap "Get from Cloud", screenshot whatever the
-       server returns, then dismiss back to the
-       File Manager                                    -> 07-download-from-cloud.png
+       server returns                                -> 07-download-from-cloud.png
+    8. tap the readings file (default "Test File.csv"),
+       screenshot the download result, confirm any
+       Success dialog                               -> 08-download-test-file.png
 
 Accessibility-tree dumps are saved alongside as tree-*.json (not numbered, so
 the numbers belong to the screenshots alone).
@@ -325,11 +327,12 @@ def download_from_cloud(driver):
 
     After the tap the app connects to the FTP host set in Settings. What
     appears next depends on the server, so any of these is accepted:
-      - "Download New Readings" file picker (files found)
+      - "Download New Readings" file picker (files found, left open for the
+        caller to pick a file next)
       - "No Files Found" / "No Host Folder" / "Error" /
-        "No Internet Connection" / "Success" alert (OK button)
-    The result is captured as 07, then every dialog is dismissed until the
-    app is back on the File Manager page.
+        "No Internet Connection" / "Success" alert (dismissed back to the
+        File Manager, then SystemExit so the run stops cleanly)
+    The result is captured as 07.
     """
     cloud = find_tappable(driver.tree(), "Get from Cloud")
     if not cloud:
@@ -356,10 +359,26 @@ def download_from_cloud(driver):
             break
     driver.screenshot("07-download-from-cloud.png")
 
-    # Dismiss everything until the File Manager is visible again. Action
-    # sheets offer Cancel, alerts offer OK ("No Host Folder" offers both
-    # "Go to Settings" and OK - prefer OK to stay on this page).
-    for round_num in (1, 2, 3, 4, 5):
+    if find_label(nodes, "Download New Readings") and (
+        find_tappable(nodes, "Cancel")
+        or any(
+            label_of(n).strip().casefold().endswith(".csv")
+            for n in nodes
+            if frame_of(n)
+        )
+    ):
+        log("  file picker is open, leaving it for the file tap")
+        return
+
+    # No file list - dismiss whatever alert/sheet came up instead, back to
+    # the File Manager, then stop: there is no file to tap.
+    dismiss_to_file_manager(driver)
+    raise SystemExit("no readings files offered by the server")
+
+
+def dismiss_to_file_manager(driver, rounds=5):
+    """Tap Cancel/OK until the File Manager page is showing again."""
+    for round_num in range(1, rounds + 1):
         nodes = driver.tree()
         back_on_page = bool(find_label(nodes, "Manage Readings"))
         dialog_open = any(
@@ -394,9 +413,75 @@ def download_from_cloud(driver):
         if back_on_page:
             log("  no Cancel/OK left and File Manager is showing - done")
             return
-        raise SystemExit("no Cancel/OK button to dismiss the cloud result with")
+        raise SystemExit("no Cancel/OK button to dismiss the dialog with")
 
-    raise SystemExit("the cloud result dialog would not dismiss after 5 taps")
+    raise SystemExit("the dialog would not dismiss after 5 taps")
+
+
+def download_test_file(driver, filename):
+    """Tap the readings file in the picker and capture the download result.
+
+    The tap starts a real FTP download + CSV import, which can take a while,
+    so a long settle is used before screenshotting 08. A "Success" alert is
+    confirmed with OK; the app then returns to the Main Menu (09).
+    """
+    nodes = driver.tree()
+    target = find_tappable(nodes, filename)
+    picked = filename
+    if not target:
+        # Fall back to the first .csv option so a renamed server file does
+        # not fail the whole run - but never tap Cancel by mistake.
+        for node in nodes:
+            label = label_of(node).strip()
+            if (
+                label
+                and label.casefold().endswith(".csv")
+                and frame_of(node)
+                and "button" in type_of(node).lower()
+            ):
+                target = (node, frame_of(node))
+                picked = label
+                break
+    if not target:
+        raise SystemExit(f'no "{filename}" (or any .csv) button in the file picker')
+    log(f'  tap "{picked}"')
+    driver.tap(*center(target[1]))
+    # Real download + CSV import + DB inserts; quiet also settles loading UI.
+    driver.quiet(90)
+
+    nodes = driver.tree(tag="tree-after-file-tap")
+    for title in ("Success", "Error", "No Internet Connection", "Main Menu"):
+        hit = find_label(nodes, title)
+        if hit:
+            log(f"  after download: {label_of(hit[0])!r}")
+            break
+    driver.screenshot("08-download-test-file.png")
+
+    nodes = driver.tree()
+    if find_label(nodes, "Success"):
+        ok = find_tappable(nodes, "OK")
+        if not ok:
+            raise SystemExit('no OK button on the Success dialog')
+        log('  tap OK on Success')
+        driver.tap(*center(ok[1]))
+        driver.quiet(20)
+        driver.wait_for(
+            lambda ns: find_label(ns, "Main Menu"),
+            "the Main Menu after a successful download",
+            timeout=90,
+        )
+        driver.screenshot("09-main-menu-after-download.png")
+        log(f"  downloaded {picked!r} - readings are on device")
+        return
+    if find_label(nodes, "Main Menu"):
+        driver.screenshot("09-main-menu-after-download.png")
+        log(f"  downloaded {picked!r} - readings are on device")
+        return
+    if find_label(nodes, "Error") or find_label(nodes, "No Internet Connection"):
+        raise SystemExit("the server reported an error for the file download")
+    if find_label(nodes, "Download New Readings"):
+        raise SystemExit(f'the tap on "{picked}" did not start the download')
+    raise SystemExit("unknown state after tapping the readings file")
 
 
 def fill_host_folder(driver, text):
@@ -492,6 +577,11 @@ def main():
     parser.add_argument("--text", required=True, help="folder path to type")
     parser.add_argument("--out", required=True, help="screenshot output directory")
     parser.add_argument(
+        "--file",
+        default="Test File.csv",
+        help="readings file to tap in the Download New Readings picker",
+    )
+    parser.add_argument(
         "--bundle-id",
         default="com.creativetechusa.easyreader",
         help="app bundle id, used only by the relaunch fallback",
@@ -527,12 +617,13 @@ def main():
 
     # Continue the journey from a known-good Settings page: back to the Main
     # Menu, then into the File Manager, then Download New Readings ->
-    # Get from Cloud, capturing each dialog.
+    # Get from Cloud -> tap the readings file, capturing each dialog.
     try:
         go_home(driver)
         open_file_manager(driver)
         download_new_readings(driver)
         download_from_cloud(driver)
+        download_test_file(driver, args.file)
     except SystemExit as exc:
         log(f"FAILED: {exc}")
         return 1

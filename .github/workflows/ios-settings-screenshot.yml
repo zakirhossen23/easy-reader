@@ -26,6 +26,11 @@ on:
         required: false
         default: ABC Utilities
         type: string
+      test_file:
+        description: Readings file to tap in the Download New Readings picker
+        required: false
+        default: Test File.csv
+        type: string
       device_model:
         description: Simulator device model
         required: false
@@ -65,6 +70,7 @@ jobs:
       RID: iossimulator-arm64
       ARTIFACTS_DIR: artifacts
       FOLDER_PATH: ${{ inputs.folder_path || 'ABC Utilities' }}
+      TEST_FILE: ${{ inputs.test_file || 'Test File.csv' }}
       DEVICE_MODEL: ${{ inputs.device_model || 'iPhone 17 Pro' }}
       # Boolean dispatch inputs arrive as the strings "true"/"false"; push runs
       # have an empty inputs context, which is falsy here too.
@@ -185,13 +191,14 @@ jobs:
           xcrun simctl install "$SIM_UDID" "$APP_PATH"
           xcrun simctl launch "$SIM_UDID" "$BUNDLE_ID"
 
-      # Settings -> Host Folder -> Home -> File Manager -> Download New Readings -> Get from Cloud, screenshotting each leg.
+      # Settings -> Host Folder -> Home -> File Manager -> Download New Readings -> Get from Cloud -> tap readings file, screenshotting each leg.
       - name: Walk the UI journey and capture screenshots
         run: |
           python3 .github/scripts/ios_settings_screenshot.py \
             --udid "$SIM_UDID" \
             --bundle-id "$BUNDLE_ID" \
             --text "$FOLDER_PATH" \
+            --file "$TEST_FILE" \
             --out "$ARTIFACTS_DIR/screenshots"
 
       - name: Collect diagnostics
