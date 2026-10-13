@@ -440,43 +440,117 @@ def dismiss_to_file_manager(driver, rounds=5):
     raise SystemExit("the dialog would not dismiss after 5 taps")
 
 
-def download_test_file(driver, filename):
+def picker_open(nodes):
+    """True while the file-picker sheet is on screen.
+
+    The picker title duplicates the page's button caption, so the Cancel
+    button (which the page itself never has) is the reliable discriminator.
+    """
+    return bool(find_tappable(nodes, "Cancel"))
+
+
+def file_option(nodes, filename):
+    """(label, (node, frame)) for the wanted file, else first .csv option."""
+    target = find_tappable(nodes, filename)
+    if target:
+        return filename, target
+    # Fall back to the first .csv option so a renamed server file does not
+    # fail the whole run - but never tap Cancel by mistake.
+    for node in nodes:
+        label = label_of(node).strip()
+        if (
+            label
+            and label.casefold().endswith(".csv")
+            and frame_of(node)
+            and "button" in type_of(node).lower()
+        ):
+            return label, (node, frame_of(node))
+    return None, None
+
+
+def download_test_file(driver, filename, taps=3):
     """Tap the readings file in the picker and capture the download result.
 
-    The tap starts a real FTP download + CSV import, which can take a while,
-    so a long settle is used before screenshotting 08. A "Success" alert is
-    confirmed with OK; the app then returns to the Main Menu (09).
-    """
-    nodes = driver.tree()
-    target = find_tappable(nodes, filename)
-    picked = filename
-    if not target:
-        # Fall back to the first .csv option so a renamed server file does
-        # not fail the whole run - but never tap Cancel by mistake.
-        for node in nodes:
-            label = label_of(node).strip()
-            if (
-                label
-                and label.casefold().endswith(".csv")
-                and frame_of(node)
-                and "button" in type_of(node).lower()
-            ):
-                target = (node, frame_of(node))
-                picked = label
-                break
-    if not target:
-        raise SystemExit(f'no "{filename}" (or any .csv) button in the file picker')
-    log(f'  tap "{picked}"')
-    driver.tap(*center(target[1]))
-    # Real download + CSV import + DB inserts; quiet also settles loading UI.
-    driver.quiet(90)
+    The tap starts a real FTP download + CSV import, which can take a while.
+    A "Success" alert is confirmed with OK; the app then returns to the Main
+    Menu (09).
 
-    nodes = driver.tree(tag="tree-after-file-tap")
-    for title in ("Success", "Error", "No Internet Connection", "Main Menu"):
-        hit = find_label(nodes, title)
-        if hit:
-            log(f"  after download: {label_of(hit[0])!r}")
+    Two failure modes seen on device are handled: the sheet can be on screen
+    yet missing from the AX tree for a while (so the picker is polled for),
+    and a tap from a stale frame can land outside the sheet, which iOS treats
+    as Cancel - a silent dismiss with no download (so the tap is verified and
+    retried instead of assumed).
+    """
+    # The sheet can be visible yet absent from the AX dump (as in
+    # tree-after-get-from-cloud.json), so poll until its buttons show up.
+    deadline = time.time() + 45
+    picked, target = None, None
+    while True:
+        nodes = driver.tree()
+        if picker_open(nodes):
+            picked, target = file_option(nodes, filename)
+            if target:
+                break
+            log("  !! picker open but no file option in the tree yet")
+        if time.time() >= deadline:
+            raise SystemExit(
+                f'no "{filename}" (or any .csv) button appeared in the file picker'
+            )
+        time.sleep(2)
+
+    for attempt in range(1, taps + 1):
+        # Re-resolve every attempt: a frame grabbed mid-animation lands
+        # outside the settled sheet and silently cancels it.
+        nodes = driver.tree()
+        if picker_open(nodes):
+            again, target_now = file_option(nodes, filename)
+            if target_now:
+                picked, target = again, target_now
+        if attempt > 1:
+            log(f'  re-tap "{picked}" (attempt {attempt}/{taps})')
+        else:
+            log(f'  tap "{picked}"')
+        driver.tap(*center(target[1]))
+        driver.quiet(10)
+        if picker_open(driver.tree()):
+            log("  !! picker still open, tap missed")
+            continue
+        break
+    else:
+        raise SystemExit(f'the tap on "{picked}" never dismissed the picker')
+
+    # The picker is gone - poll for evidence of the download instead of one
+    # blind wait. A clean File Manager with no download UI means the tap hit
+    # Cancel/outside and nothing started.
+    terminal = ("Success", "Error", "No Internet Connection", "Main Menu")
+    running = (
+        "Backing Up Current File...",
+        "Downloading File...",
+        "Backup up Accounts...",
+        "Writing File...",
+    )
+    deadline = time.time() + 150
+    seen_running = False
+    while True:
+        nodes = driver.tree(tag="tree-after-file-tap")
+        # find_label returns (node, frame); unwrap for the log below.
+        found = None
+        for title in (*terminal, *running):
+            match = find_label(nodes, title)
+            if match:
+                found = label_of(match[0])
+                break
+        if found:
+            log(f"  after download: {found!r}")
+            if found in running:
+                seen_running = True
+            else:
+                break
+        elif picker_open(nodes):
+            raise SystemExit(f'the picker reappeared after tapping "{picked}"')
+        if time.time() >= deadline:
             break
+        time.sleep(5)
     driver.screenshot("08-download-test-file.png")
 
     nodes = driver.tree()
@@ -501,9 +575,14 @@ def download_test_file(driver, filename):
         return
     if find_label(nodes, "Error") or find_label(nodes, "No Internet Connection"):
         raise SystemExit("the server reported an error for the file download")
-    if find_label(nodes, "Download New Readings"):
+    if picker_open(nodes):
         raise SystemExit(f'the tap on "{picked}" did not start the download')
-    raise SystemExit("unknown state after tapping the readings file")
+    if seen_running:
+        raise SystemExit("the download started but never reached Success")
+    raise SystemExit(
+        f'the picker dismissed but no download started for "{picked}" '
+        "(the tap likely hit Cancel or outside the sheet)"
+    )
 
 
 def open_enter_readings(driver):
