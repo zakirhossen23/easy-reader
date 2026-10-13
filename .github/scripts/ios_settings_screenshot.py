@@ -19,6 +19,7 @@ Flow, exactly as a user would do it - each screenshot is numbered by step:
        (default 10th)                                -> 11-enter-reading-10th.png
    11. tap the nav bar's "Home" item to return       -> 12-home-after-readings.png
    12. tap the "File Manager" tile                   -> 13-file-manager-again.png
+   13. tap the nav bar's "Adv." item                 -> 14-advanced-file-manager.png
 
 Accessibility-tree dumps are saved alongside as tree-*.json (not numbered, so
 the numbers belong to the screenshots alone).
@@ -609,6 +610,42 @@ def open_enter_readings(driver):
     tap_tile(driver, "Enter Readings", "New Reading:", "10-enter-readings-first.png")
 
 
+def open_advanced(driver, tablet=False):
+    """Tap the nav bar's "Adv." toolbar item.
+
+    Toolbar items are not exposed in the idb accessibility tree (same reason
+    go_home falls back to relaunch), so this taps by nav-bar geometry: the
+    Adv. pill sits second from the right edge, vertically centered in the bar
+    below the status area (~73pt on iPhone, ~46pt on iPad). The tap is
+    verified and retried like tile taps.
+    """
+    for attempt in range(1, 4):
+        nodes = driver.tree()
+        width = 402.0
+        for node in nodes:
+            if type_of(node).lower() == "application" and frame_of(node):
+                width = frame_of(node)["width"] or width
+                break
+        x, y = width - 89, (46 if tablet else 73)
+        if attempt > 1:
+            log(f"  re-tap Adv. pill (attempt {attempt}/3)")
+        else:
+            log(f"  tap Adv. pill ({x:.0f}, {y:.0f})")
+        driver.tap(x, y)
+        driver.quiet(15)
+        try:
+            driver.wait_for(
+                lambda ns: find_label(ns, "Advanced Features"),
+                "the Advanced Features page",
+                timeout=30,
+            )
+            driver.screenshot("14-advanced-file-manager.png")
+            return
+        except SystemExit as exc:
+            log(f"  !! attempt {attempt}: {exc}")
+    raise SystemExit("could not reach the Advanced Features page after 3 taps")
+
+
 def goto_reading_index(driver, index):
     """Tap "Next account" until the requested 1-based reading is showing.
 
@@ -735,6 +772,11 @@ def main():
         help="1-based reading to navigate to on the Enter Readings page",
     )
     parser.add_argument(
+        "--tablet",
+        action="store_true",
+        help="iPad geometry for the nav-bar Adv. pill tap",
+    )
+    parser.add_argument(
         "--bundle-id",
         default="com.creativetechusa.easyreader",
         help="app bundle id, used only by the relaunch fallback",
@@ -771,7 +813,7 @@ def main():
     # Continue the journey from a known-good Settings page: back to the Main
     # Menu, then into the File Manager, then Download New Readings ->
     # Get from Cloud -> tap the readings file -> Enter Readings at the
-    # requested index -> Home -> File Manager, capturing each dialog.
+    # requested index -> Home -> File Manager -> Adv., capturing each dialog.
     try:
         go_home(driver)
         open_file_manager(driver)
@@ -782,6 +824,7 @@ def main():
         goto_reading_index(driver, args.reading_index)
         go_home(driver, "12-home-after-readings.png")
         open_file_manager(driver, "13-file-manager-again.png")
+        open_advanced(driver, tablet=args.tablet)
     except SystemExit as exc:
         log(f"FAILED: {exc}")
         # Leave behind what the screen and the tree actually showed, so a
