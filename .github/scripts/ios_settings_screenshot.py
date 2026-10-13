@@ -224,30 +224,47 @@ def wait_for_home(driver):
     driver.screenshot("01-main-menu.png")
 
 
-def tap_tile(driver, caption, expect, screenshot=None):
+def tap_tile(driver, caption, expect, screenshot=None, attempts=3):
     """Tap a Main Menu tile by its caption, then wait for the destination page.
 
     A tile is a Frame > Grid > (ImageButton above, caption Label below), and the
     button's bottom edge sits exactly where the caption starts. Prefer the real
     button hit target when the accessibility tree exposes one, otherwise tap the
     icon directly above the caption.
+
+    Taps are retried: right after a relaunch the app can still be settling and
+    silently drop the first tap (seen as "timed out waiting for Manage
+    Readings" even though the tile was found and tapped).
     """
-    _node, frame = driver.wait_for(
-        lambda nodes: find_label(nodes, caption), f"the {caption} tile"
-    )
+    last_error = None
+    for attempt in range(1, attempts + 1):
+        _node, frame = driver.wait_for(
+            lambda nodes: find_label(nodes, caption), f"the {caption} tile"
+        )
 
-    button = closest_button_above(driver.tree(), frame)
-    if button:
-        x, y = center(button)
-    else:
-        x = center(frame)[0]
-        y = frame["y"] - max(1.5 * frame["height"], 24)
+        button = closest_button_above(driver.tree(), frame)
+        if button:
+            x, y = center(button)
+        else:
+            x = center(frame)[0]
+            y = frame["y"] - max(1.5 * frame["height"], 24)
 
-    driver.tap(x, y)
-    driver.quiet(20)
-    driver.wait_for(lambda nodes: find_label(nodes, expect), expect, timeout=60)
-    if screenshot:
-        driver.screenshot(screenshot)
+        if attempt > 1:
+            log(f"  re-tap {caption} tile (attempt {attempt}/{attempts})")
+        driver.tap(x, y)
+        driver.quiet(20)
+        try:
+            driver.wait_for(
+                lambda nodes: find_label(nodes, expect), expect, timeout=30
+            )
+            if screenshot:
+                driver.screenshot(screenshot)
+            return
+        except SystemExit as exc:
+            last_error = exc
+            log(f"  !! attempt {attempt}: {exc}")
+
+    raise SystemExit(f"could not reach {expect!r} after {attempts} taps: {last_error}")
 
 
 def open_settings(driver):
@@ -668,6 +685,13 @@ def main():
         open_file_manager(driver, "13-file-manager-again.png")
     except SystemExit as exc:
         log(f"FAILED: {exc}")
+        # Leave behind what the screen and the tree actually showed, so a
+        # failed run can be diagnosed from the artifact alone.
+        try:
+            driver.tree(tag="tree-failed-state")
+            driver.screenshot("99-failed-state.png")
+        except Exception as dump_exc:
+            log(f"  !! could not capture failure state: {dump_exc}")
         return 1
 
     log(f"done -> {final}")
