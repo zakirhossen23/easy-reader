@@ -16,7 +16,7 @@
     <ContentPage.ToolbarItems>
         <ToolbarItem Text="Home" Command="{Binding GoTo_MainPage_Command}" Order="Primary" Priority="0"/>
         <ToolbarItem Text="Adv." Command="{Binding GoTo_AdvancedFileManagerPage_Command}" Order="Primary" Priority="1"/>
-        <ToolbarItem IconImageSource="settings.png" Command="{Binding GoTo_SettingsPage_Command}" Order="Primary" Priority="2"/>
+        <ToolbarItem IconImageSource="settings_toolbar.png" Command="{Binding GoTo_SettingsPage_Command}" Order="Primary" Priority="2"/>
     </ContentPage.ToolbarItems>
     <!--END-->
 

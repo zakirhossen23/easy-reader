@@ -19,10 +19,10 @@
     <ContentPage.ToolbarItems>
         <ToolbarItem Text="Home" Command="{Binding GoTo_MainPage_Command}" Order="Primary" Priority="0"/>
         <ToolbarItem Command="{Binding GoTo_SearchPage_Command}"
-                     Text="{OnIdiom Phone='Search'}" IconImageSource="{OnIdiom Tablet='searchAccounts.png'}" 
+                     Text="{OnIdiom Phone='Search'}" IconImageSource="{OnIdiom Tablet='searchaccounts_toolbar.png'}" 
                      Order="{OnIdiom Tablet=Primary, Phone=Secondary}" Priority="{OnIdiom Tablet=1, Phone=0}"/>
         <ToolbarItem Command="{Binding GoTo_SettingsPage_Command}"
-                     Text="{OnIdiom Phone='Settings'}" IconImageSource="{OnIdiom Tablet='settings.png'}" 
+                     Text="{OnIdiom Phone='Settings'}" IconImageSource="{OnIdiom Tablet='settings_toolbar.png'}" 
                      Order="{OnIdiom Tablet=Primary, Phone=Secondary}" Priority="{OnIdiom Tablet=2, Phone=1}"/>
     </ContentPage.ToolbarItems>
     <!--END-->

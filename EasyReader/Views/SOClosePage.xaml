@@ -20,7 +20,7 @@
     <ContentPage.ToolbarItems>
         
         <ToolbarItem Text="Home" Command="{Binding GoTo_MainPage_Command}" Order="Primary" Priority="0"/>
-        <ToolbarItem IconImageSource="settings.png" Command="{Binding GoTo_SettingsPage_Command}" Order="Primary" Priority="1"/>
+        <ToolbarItem IconImageSource="settings_toolbar.png" Command="{Binding GoTo_SettingsPage_Command}" Order="Primary" Priority="1"/>
     </ContentPage.ToolbarItems>
     <!--END-->
 

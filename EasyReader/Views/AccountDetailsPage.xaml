@@ -15,7 +15,7 @@
     </Shell.TitleView>
     <ContentPage.ToolbarItems>
         <ToolbarItem Text="Home" Command="{Binding GoTo_MainPage_Command}" Order="Primary" Priority="0" />
-        <ToolbarItem Command="{Binding GoTo_SettingsPage_Command}" Text="Settings" IconImageSource="settings.png" Order="Primary" Priority="1" />
+        <ToolbarItem Command="{Binding GoTo_SettingsPage_Command}" Text="Settings" IconImageSource="settings_toolbar.png" Order="Primary" Priority="1" />
     </ContentPage.ToolbarItems>
 
     <Grid Style="{StaticResource GridPadding}" >
