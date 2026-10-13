@@ -195,7 +195,7 @@
         </Grid>
 
          <!-- Footer version note -->
-         <Label Grid.Row="3" Text="EasyReader v2.1.18" HorizontalOptions="Center" HorizontalTextAlignment="Center"
+         <Label Grid.Row="3" Text="EasyReader v2.1.19" HorizontalOptions="Center" HorizontalTextAlignment="Center"
              VerticalOptions="End" FontSize="{OnIdiom Tablet=14, Phone=12}" TextColor="Gray" Margin="0,8,0,0"/>
 
         </Grid>

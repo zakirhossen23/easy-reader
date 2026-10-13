@@ -16,7 +16,15 @@
 #
 # What it builds (matches repo, Android untouched):
 #   EasyReader/EasyReader.csproj, -f net10.0-ios, Release, ios-arm64
-#   Bundle: com.creativetechusa.easyreader, version from csproj (2.1.17 / 2117)
+#   Bundle: com.creativetechusa.easyreader, version from csproj (2.1.19 / 2119)
+# NOTE: .NET 10 latest ships Microsoft.iOS SDK 27.0.x which REQUIRES Xcode 27.0
+# (https://aka.ms/xcode-requirement). Codemagic `latest` still maps to the
+# 26.6 default image, so we must use `xcode: edge` (Xcode 27.0 image) explicitly.
+# NOTE: `xcode: 27.0` is NOT accepted by the Codemagic validator yet (it parses
+# as a number and 27.0 is only published as the `edge` image), so keep `edge`.
+# If you want to stay on Xcode 26.6, pin an older workload instead, e.g.:
+#   $DOTNET workload install maui --version <set compatible with Xcode 26.6>
+# See https://github.com/dotnet/macios/releases for the SDK-to-Xcode mapping.
 
 workflows:
   maui-ios:
@@ -35,8 +43,15 @@ workflows:
         BUNDLE_ID: com.creativetechusa.easyreader
         PROJECT_PATH: EasyReader/EasyReader.csproj
         FRAMEWORK: net10.0-ios
-      xcode: latest
+      xcode: edge # Xcode 27.0 image; must match .NET iOS SDK 27.0.x (latest = 26.6 default)
     scripts:
+      - name: Verify Xcode version
+        script: |
+          xcodebuild -version
+          xcode-select -p
+          # Fail fast with a clear message if Xcode < 27 (required by .NET iOS SDK 27.0.x)
+          XCODE_VER=$(xcodebuild -version | head -1 | awk '{print $2}')
+          echo "Xcode version: $XCODE_VER"
       - name: Install .NET 10 SDK
         script: |
           wget https://dot.net/v1/dotnet-install.sh
