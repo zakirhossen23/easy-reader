@@ -399,7 +399,12 @@ def download_from_cloud(driver):
 
 
 def dismiss_to_file_manager(driver, rounds=5):
-    """Tap Cancel/OK until the File Manager page is showing again."""
+    """Tap Cancel/OK until the File Manager page is showing again.
+
+    iPad presents sheets as popovers with no Cancel button: when neither
+    Cancel nor OK exists, tap a dead header area outside the popover, which
+    iOS treats as a dismiss without triggering anything behind it.
+    """
     for round_num in range(1, rounds + 1):
         nodes = driver.tree()
         back_on_page = bool(find_label(nodes, "Manage Readings"))
@@ -416,7 +421,7 @@ def dismiss_to_file_manager(driver, rounds=5):
                 "No Internet Connection",
                 "Success",
             )
-        )
+        ) or picker_open(nodes)
         if back_on_page and not dialog_open:
             log("  dialogs dismissed, back on the File Manager")
             return
@@ -432,6 +437,12 @@ def dismiss_to_file_manager(driver, rounds=5):
             driver.tap(*center(ok[1]))
             driver.quiet(15)
             continue
+        if dialog_open:
+            # Cancel-less sheet/popover (iPad): tap outside it to dismiss.
+            log(f"  tap outside popover (round {round_num})")
+            driver.tap(20, 135)
+            driver.quiet(15)
+            continue
         if back_on_page:
             log("  no Cancel/OK left and File Manager is showing - done")
             return
@@ -443,19 +454,18 @@ def dismiss_to_file_manager(driver, rounds=5):
 def picker_open(nodes):
     """True while the file-picker sheet is on screen.
 
-    The picker title duplicates the page's button caption, so the Cancel
-    button (which the page itself never has) is the reliable discriminator.
+    The picker title duplicates the page's button caption, so it cannot be
+    used. Cancel is the discriminator on iPhone - but iPad presents sheets as
+    popovers with no Cancel button, so a .csv option counts too.
     """
-    return bool(find_tappable(nodes, "Cancel"))
+    if find_tappable(nodes, "Cancel"):
+        return True
+    label, _target = file_option(nodes, "__no-such-file__")
+    return label is not None
 
 
-def file_option(nodes, filename):
-    """(label, (node, frame)) for the wanted file, else first .csv option."""
-    target = find_tappable(nodes, filename)
-    if target:
-        return filename, target
-    # Fall back to the first .csv option so a renamed server file does not
-    # fail the whole run - but never tap Cancel by mistake.
+def any_csv(nodes):
+    """First .csv button in the tree, excluding Cancel."""
     for node in nodes:
         label = label_of(node).strip()
         if (
@@ -466,6 +476,16 @@ def file_option(nodes, filename):
         ):
             return label, (node, frame_of(node))
     return None, None
+
+
+def file_option(nodes, filename):
+    """(label, (node, frame)) for the wanted file, else first .csv option."""
+    target = find_tappable(nodes, filename)
+    if target:
+        return filename, target
+    # Fall back to the first .csv option so a renamed server file does not
+    # fail the whole run - but never tap Cancel by mistake.
+    return any_csv(nodes)
 
 
 def download_test_file(driver, filename, taps=3):

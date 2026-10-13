@@ -2,10 +2,14 @@
 #
 # What this does, end to end, on a GitHub-hosted macOS runner:
 #   1. builds EasyReader for the iOS Simulator (no signing identity required)
-#   2. boots an iPhone simulator and installs + launches the app
+#   2. boots an iPhone simulator (or iPad when `tablet_mode` is true, or when
+#      `device_model` names an iPad) and installs + launches the app
 #   3. drives the UI with idb: Main Menu -> Settings tile -> Host Folder field
 #      -> types the folder path -> Home -> File Manager tile
-#   4. uploads the screenshots as workflow artifacts; the built .app is only
+#      -> Download New Readings -> Get from Cloud -> tap the readings file
+#      -> Enter Readings at index -> Home -> File Manager
+#   4. uploads the screenshots as workflow artifacts (`settings-screenshot`,
+#      or `settings-screenshot-tablet` for iPad runs); the built .app is only
 #      uploaded when the `upload_app` input is true (default false, so manual
 #      runs stay small unless you opt in)
 #
@@ -37,10 +41,15 @@ on:
         default: "10"
         type: string
       device_model:
-        description: Simulator device model
+        description: Simulator device model (a custom iPad name also implies tablet mode)
         required: false
         default: iPhone 17 Pro
         type: string
+      tablet_mode:
+        description: Run on an iPad simulator instead of iPhone (separate tablet artifact)
+        required: false
+        default: false
+        type: boolean
       xcode_version:
         description: Optional Xcode version to select (e.g. 26.6). Empty = runner default (26.6 on macos-26).
         required: false
@@ -77,7 +86,12 @@ jobs:
       FOLDER_PATH: ${{ inputs.folder_path || 'ABC Utilities' }}
       TEST_FILE: ${{ inputs.test_file || 'Test File.csv' }}
       READING_INDEX: ${{ inputs.reading_index || '10' }}
-      DEVICE_MODEL: ${{ inputs.device_model || 'iPhone 17 Pro' }}
+      # Tablet default applies only when the model was left at the iPhone default.
+      DEVICE_MODEL: ${{ (inputs.tablet_mode && (inputs.device_model == 'iPhone 17 Pro' || inputs.device_model == '')) && 'iPad Pro 11-inch (M4)' || inputs.device_model || 'iPhone 17 Pro' }}
+      # A custom iPad device_model implies tablet mode even if the flag is off.
+      # The `|| ''` guards keep startsWith null-safe on push events.
+      TABLET_MODE: ${{ (inputs.tablet_mode || startsWith(inputs.device_model || '', 'iPad')) && 'true' || 'false' }}
+      ARTIFACT_NAME: ${{ (inputs.tablet_mode || startsWith(inputs.device_model || '', 'iPad')) && 'settings-screenshot-tablet' || 'settings-screenshot' }}
       # Boolean dispatch inputs arrive as the strings "true"/"false"; push runs
       # have an empty inputs context, which is falsy here too.
       UPLOAD_APP: ${{ inputs.upload_app || 'false' }}
@@ -135,17 +149,19 @@ jobs:
 
       - name: Select simulator
         run: |
-          python3 - "$DEVICE_MODEL" "$GITHUB_ENV" <<'PY'
+          python3 - "$DEVICE_MODEL" "$TABLET_MODE" "$GITHUB_ENV" <<'PY'
           import json, subprocess, sys
 
-          model, env_file = sys.argv[1], sys.argv[2]
+          model, tablet, env_file = sys.argv[1], sys.argv[2] == "true", sys.argv[3]
           listing = json.loads(
               subprocess.check_output(
                   ["xcrun", "simctl", "list", "devices", "available", "--json"]
               )
           )
 
-          exact, iphones = [], []
+          # iPad names imply tablet mode even without the flag.
+          family = "iPad" if (tablet or model.startswith("iPad")) else "iPhone"
+          exact, pool = [], []
           for runtime, devices in listing["devices"].items():
               if "iOS" not in runtime:
                   continue
@@ -154,16 +170,16 @@ jobs:
                       continue
                   if dev["name"] == model:
                       exact.append((runtime, dev))
-                  if dev["name"].startswith("iPhone"):
-                      iphones.append((runtime, dev))
+                  if dev["name"].startswith(family):
+                      pool.append((runtime, dev))
 
-          pool, note = exact, ""
-          if not pool:
-              pool, note = iphones, f"'{model}' is not installed, falling back to "
-          if not pool:
-              sys.exit(f"No iOS simulator available for {model}")
+          picked, note = exact, ""
+          if not picked:
+              picked, note = pool, f"'{model}' is not installed, falling back to "
+          if not picked:
+              sys.exit(f"No iOS {family} simulator available for {model}")
 
-          runtime, dev = max(pool, key=lambda item: item[0])
+          runtime, dev = max(picked, key=lambda item: item[0])
           with open(env_file, "a") as fh:
               fh.write(f"SIM_UDID={dev['udid']}\n")
               fh.write(f"SIM_NAME={dev['name']}\n")
@@ -222,7 +238,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: settings-screenshot
+          # settings-screenshot (iPhone) or settings-screenshot-tablet (iPad).
+          name: ${{ env.ARTIFACT_NAME }}
           # *.png are the screenshots, tree-*.json are accessibility dumps.
           path: ${{ env.ARTIFACTS_DIR }}/screenshots/*
           if-no-files-found: warn
