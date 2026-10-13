@@ -1075,7 +1075,10 @@ namespace EasyReader.ViewModels
             }
             catch (Exception ex)
             {
-                AppServices.UserDialogs.HideLoading();
+                // Await the pop before alerting, or iOS drops the alert while
+                // the overlay is still on top.
+                await AppServices.UserDialogs.HideLoadingAsync();
+                await Task.Delay(300);
                 await Application.Current.MainPage.DisplayAlert("Error", ex.Message, "OK");
                 return "error";
             }

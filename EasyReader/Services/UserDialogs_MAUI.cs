@@ -10,18 +10,63 @@ namespace EasyReader.Services
 {
     public class ProgressDialog_MAUI : IProgressDialog
     {
+        readonly Func<Task>? _hide;
+        int _disposed;
+
+        public ProgressDialog_MAUI(Func<Task>? hide = null)
+        {
+            _hide = hide;
+        }
+
         public int PercentComplete { get; set; }
-        public void Dispose() { }
+
+        public void Dispose()
+        {
+            // Progress(show: true) pushes the overlay, so disposing must pop
+            // it. The old no-op Dispose leaked the ref-count and left the
+            // overlay (e.g. "Backup up Accounts...") on screen forever.
+            if (_hide == null || Interlocked.Exchange(ref _disposed, 1) != 0)
+                return;
+            _ = _hide();
+        }
     }
 
     public class UserDialogs_MAUI : IUserDialogs
     {
         static ContentPage? _loadingPage;
-        // Reference count + gate so overlapping Show/Hide calls from
-        // background continuations can't push/pop the modal out of order
-        // (this was the loading-overlay flashing, worst on iOS).
+        // Reference count so overlapping Show/Hide pairs share one overlay.
         static int _loadingCount;
-        static readonly SemaphoreSlim _loadingLock = new(1, 1);
+        // Strict FIFO chain for every push/pop: Show posts its UI work to the
+        // main thread and Hide used to race it, so a Hide processed before its
+        // Show left the modal stranded (worst on iOS, where the main-thread
+        // queue drains slower). Enqueueing preserves call order.
+        static readonly object _chainLock = new();
+        static Task _chain = Task.CompletedTask;
+
+        static Task Enqueue(Func<Task> work)
+        {
+            lock (_chainLock)
+            {
+                _chain = _chain.ContinueWith(
+                    _ => RunSafely(work),
+                    CancellationToken.None,
+                    TaskContinuationOptions.DenyChildAttach,
+                    TaskScheduler.Default).Unwrap();
+                return _chain;
+            }
+        }
+
+        static async Task RunSafely(Func<Task> work)
+        {
+            try
+            {
+                await work().ConfigureAwait(false);
+            }
+            catch
+            {
+                // Overlay work is best-effort; never fault the chain.
+            }
+        }
 
         public Task ShowAlertAsync(string title, string message, string ok)
         {
@@ -54,83 +99,22 @@ namespace EasyReader.Services
         {
             if (App.Current?.MainPage == null) return;
 
-            MainThread.BeginInvokeOnMainThread(async () =>
+            _ = Enqueue(async () =>
             {
-                await _loadingLock.WaitAsync();
-                try
-                {
-                    _loadingCount++;
-                    if (_loadingPage != null) return;
-                }
-                finally
-                {
-                    _loadingLock.Release();
-                }
+                _loadingCount++;
+                if (_loadingPage != null) return;
 
-                // overlay background depending on maskType
-                Color overlayColor = maskType == MaskType.Gradient
-                    ? new Color(0, 0, 0, 0.6f)
-                    : new Color(0, 0, 0, 0.35f);
-
-                var activity = new ActivityIndicator
-                {
-                    IsRunning = true,
-                    HorizontalOptions = LayoutOptions.Center,
-                    VerticalOptions = LayoutOptions.Center,
-                    Color = Colors.White
-                };
-
-                var label = new Label
-                {
-                    Text = title ?? string.Empty,
-                    HorizontalOptions = LayoutOptions.Center,
-                    VerticalOptions = LayoutOptions.Center,
-                    TextColor = Colors.White,
-                    FontAttributes = FontAttributes.Bold
-                };
-
-                var contentStack = new VerticalStackLayout
-                {
-                    Spacing = 12,
-                    Padding = new Thickness(20),
-                    HorizontalOptions = LayoutOptions.Center,
-                    VerticalOptions = LayoutOptions.Center,
-                    Children = { activity, label }
-                };
-
-                // modern card with slight opacity
-                var card = new Frame
-                {
-                    Content = contentStack,
-                    CornerRadius = 12,
-                    HasShadow = true,
-                    BackgroundColor = new Color(0, 0, 0, 0.75f),
-                    Padding = 0,
-                    HorizontalOptions = LayoutOptions.Center,
-                    VerticalOptions = LayoutOptions.Center
-                };
-
-                var grid = new Grid
-                {
-                    BackgroundColor = overlayColor,
-                    HorizontalOptions = LayoutOptions.Fill,
-                    VerticalOptions = LayoutOptions.Fill
-                };
-
-                // center the card
-                grid.Children.Add(card, 0, 0);
-                Grid.SetRow(card, 0);
-                Grid.SetColumn(card, 0);
-
-                _loadingPage = new ContentPage
-                {
-                    BackgroundColor = Colors.Transparent,
-                    Content = grid
-                };
+                // Build and push on the main thread; the whole link runs in
+                // call order, so a later Hide can never slip in before this.
+                var page = await MainThread.InvokeOnMainThreadAsync(() =>
+                    BuildLoadingPage(title, maskType)).ConfigureAwait(false);
+                _loadingPage = page;
 
                 try
                 {
-                    await App.Current.MainPage.Navigation.PushModalAsync(_loadingPage, false);
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                        App.Current.MainPage.Navigation.PushModalAsync(page, false))
+                        .ConfigureAwait(false);
                 }
                 catch
                 {
@@ -140,54 +124,105 @@ namespace EasyReader.Services
             });
         }
 
+        static ContentPage BuildLoadingPage(string? title, MaskType maskType)
+        {
+            // overlay background depending on maskType
+            Color overlayColor = maskType == MaskType.Gradient
+                ? new Color(0, 0, 0, 0.6f)
+                : new Color(0, 0, 0, 0.35f);
+
+            var activity = new ActivityIndicator
+            {
+                IsRunning = true,
+                HorizontalOptions = LayoutOptions.Center,
+                VerticalOptions = LayoutOptions.Center,
+                Color = Colors.White
+            };
+
+            var label = new Label
+            {
+                Text = title ?? string.Empty,
+                HorizontalOptions = LayoutOptions.Center,
+                VerticalOptions = LayoutOptions.Center,
+                TextColor = Colors.White,
+                FontAttributes = FontAttributes.Bold
+            };
+
+            var contentStack = new VerticalStackLayout
+            {
+                Spacing = 12,
+                Padding = new Thickness(20),
+                HorizontalOptions = LayoutOptions.Center,
+                VerticalOptions = LayoutOptions.Center,
+                Children = { activity, label }
+            };
+
+            // modern card with slight opacity
+            var card = new Frame
+            {
+                Content = contentStack,
+                CornerRadius = 12,
+                HasShadow = true,
+                BackgroundColor = new Color(0, 0, 0, 0.75f),
+                Padding = 0,
+                HorizontalOptions = LayoutOptions.Center,
+                VerticalOptions = LayoutOptions.Center
+            };
+
+            var grid = new Grid
+            {
+                BackgroundColor = overlayColor,
+                HorizontalOptions = LayoutOptions.Fill,
+                VerticalOptions = LayoutOptions.Fill
+            };
+
+            // center the card
+            grid.Children.Add(card, 0, 0);
+            Grid.SetRow(card, 0);
+            Grid.SetColumn(card, 0);
+
+            return new ContentPage
+            {
+                BackgroundColor = Colors.Transparent,
+                Content = grid
+            };
+        }
+
         public void HideLoading()
         {
             _ = HideLoadingAsync();
         }
 
-        public async Task HideLoadingAsync()
+        public Task HideLoadingAsync()
         {
-            if (App.Current?.MainPage == null) return;
+            if (App.Current?.MainPage == null) return Task.CompletedTask;
 
-            bool shouldPop = false;
-            await _loadingLock.WaitAsync();
-            try
+            // Awaiting this guarantees the modal is gone before the caller
+            // presents an alert / action sheet on iOS.
+            return Enqueue(async () =>
             {
                 if (_loadingCount > 0) _loadingCount--;
-                shouldPop = _loadingCount == 0 && _loadingPage != null;
-            }
-            finally
-            {
-                _loadingLock.Release();
-            }
-            if (!shouldPop) return;
-            try
-            {
-                // Must run on the UI thread; awaiting here (instead of
-                // fire-and-forget) guarantees the modal is gone before the
-                // caller presents an alert / action sheet on iOS.
-                if (MainThread.IsMainThread)
-                    await App.Current.MainPage.Navigation.PopModalAsync(false);
-                else
-                    await MainThread.InvokeOnMainThreadAsync(() =>
-                        App.Current.MainPage.Navigation.PopModalAsync(false));
-            }
-            catch
-            {
-                // ignore
-            }
-            finally
-            {
+                if (_loadingCount != 0 || _loadingPage == null) return;
+
                 _loadingPage = null;
-            }
+                try
+                {
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                        App.Current.MainPage.Navigation.PopModalAsync(false))
+                        .ConfigureAwait(false);
+                }
+                catch
+                {
+                    // ignore
+                }
+            });
         }
 
         public IProgressDialog Progress(string title, string? cancelText, string? title2, bool show, MaskType maskType)
         {
-            var dlg = new ProgressDialog_MAUI();
             if (show)
                 ShowLoading(title, maskType);
-            return dlg;
+            return new ProgressDialog_MAUI(show ? (Func<Task>)HideLoadingAsync : null);
         }
     }
 }
