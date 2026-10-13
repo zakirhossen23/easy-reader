@@ -13,7 +13,12 @@ Flow, exactly as a user would do it - each screenshot is numbered by step:
        server returns                                -> 07-download-from-cloud.png
     8. tap the readings file (default "Test File.csv"),
        screenshot the download result, confirm any
-       Success dialog                               -> 08-download-test-file.png
+       Success dialog                                -> 08-download-test-file.png
+    9. tap the "Enter Readings" tile                  -> 10-enter-readings-first.png
+   10. tap "Next account" to the requested index
+       (default 10th)                                -> 11-enter-reading-10th.png
+   11. tap the nav bar's "Home" item to return       -> 12-home-after-readings.png
+   12. tap the "File Manager" tile                   -> 13-file-manager-again.png
 
 Accessibility-tree dumps are saved alongside as tree-*.json (not numbered, so
 the numbers belong to the screenshots alone).
@@ -249,7 +254,7 @@ def open_settings(driver):
     tap_tile(driver, "Settings", "Host Folder:", "02-settings-page.png")
 
 
-def go_home(driver):
+def go_home(driver, screenshot="04-home-again.png"):
     """Return to the Main Menu via the nav bar's "Home" item (PopToRootAsync).
 
     Every page carries that toolbar item, but if iOS does not surface it in the
@@ -271,11 +276,11 @@ def go_home(driver):
     driver.wait_for(
         lambda nodes: find_label(nodes, "Main Menu"), "the Main Menu", timeout=90
     )
-    driver.screenshot("04-home-again.png")
+    driver.screenshot(screenshot)
 
 
-def open_file_manager(driver):
-    tap_tile(driver, "File Manager", "Manage Readings", "05-file-manager.png")
+def open_file_manager(driver, screenshot="05-file-manager.png"):
+    tap_tile(driver, "File Manager", "Manage Readings", screenshot)
 
 
 def download_new_readings(driver):
@@ -484,6 +489,32 @@ def download_test_file(driver, filename):
     raise SystemExit("unknown state after tapping the readings file")
 
 
+def open_enter_readings(driver):
+    tap_tile(driver, "Enter Readings", "New Reading:", "10-enter-readings-first.png")
+
+
+def goto_reading_index(driver, index):
+    """Tap "Next account" until the requested 1-based reading is showing.
+
+    The page opens on the 1st account, so index 10 needs 9 taps. Next is
+    bounds-safe in the app (it stays on the last account), so an index past
+    the end lands on the final reading instead of failing.
+    """
+    if index < 1:
+        raise SystemExit(f"reading index must be >= 1, got {index}")
+    for tap_num in range(1, index):
+        _node, frame = driver.wait_for(
+            lambda nodes: find_tappable(nodes, "Next account"),
+            "the Next account button",
+            timeout=30,
+        )
+        log(f"  tap Next account ({tap_num}/{index - 1})")
+        driver.tap(*center(frame))
+        driver.quiet(10)
+    driver.screenshot(f"11-enter-reading-{index}th.png")
+    log(f"  on reading #{index}")
+
+
 def fill_host_folder(driver, text):
     _node, label_frame = driver.wait_for(
         lambda nodes: find_label(nodes, "Host Folder:"), "the Host Folder label"
@@ -582,6 +613,12 @@ def main():
         help="readings file to tap in the Download New Readings picker",
     )
     parser.add_argument(
+        "--reading-index",
+        type=int,
+        default=10,
+        help="1-based reading to navigate to on the Enter Readings page",
+    )
+    parser.add_argument(
         "--bundle-id",
         default="com.creativetechusa.easyreader",
         help="app bundle id, used only by the relaunch fallback",
@@ -617,13 +654,18 @@ def main():
 
     # Continue the journey from a known-good Settings page: back to the Main
     # Menu, then into the File Manager, then Download New Readings ->
-    # Get from Cloud -> tap the readings file, capturing each dialog.
+    # Get from Cloud -> tap the readings file -> Enter Readings at the
+    # requested index -> Home -> File Manager, capturing each dialog.
     try:
         go_home(driver)
         open_file_manager(driver)
         download_new_readings(driver)
         download_from_cloud(driver)
         download_test_file(driver, args.file)
+        open_enter_readings(driver)
+        goto_reading_index(driver, args.reading_index)
+        go_home(driver, "12-home-after-readings.png")
+        open_file_manager(driver, "13-file-manager-again.png")
     except SystemExit as exc:
         log(f"FAILED: {exc}")
         return 1

@@ -245,13 +245,13 @@
         <Grid x:Name="FunctionsBtns" RowDefinitions="*,*" ColumnDefinitions="*,*,*,*" Grid.Row="2" RowSpacing="5" ColumnSpacing="5" >
 
             <!--CHANGE ACCOUNT BUTTONS-->
-            <ImageButton Source="first.png" Command="{Binding FirstAccount_Command}"
+            <ImageButton Source="first.png" Command="{Binding FirstAccount_Command}" AutomationId="FirstAccountButton" SemanticProperties.Description="First account"
     Style="{StaticResource ImgBtnBotBtns}" Grid.Column="0" Grid.Row="0"/>
-            <ImageButton Source="previous.png" Command="{Binding PreviousAccount_Command}"
+            <ImageButton Source="previous.png" Command="{Binding PreviousAccount_Command}" AutomationId="PreviousAccountButton" SemanticProperties.Description="Previous account"
     Style="{StaticResource ImgBtnBotBtns}" Grid.Column="1" Grid.Row="0"/>
-            <ImageButton Source="next.png" Command="{Binding NextAccount_Command}"
+            <ImageButton Source="next.png" Command="{Binding NextAccount_Command}" AutomationId="NextAccountButton" SemanticProperties.Description="Next account"
     Style="{StaticResource ImgBtnBotBtns}" Grid.Column="2" Grid.Row="0" />
-            <ImageButton Source="last.png" Command="{Binding LastAccount_Command}"
+            <ImageButton Source="last.png" Command="{Binding LastAccount_Command}" AutomationId="LastAccountButton" SemanticProperties.Description="Last account"
     Style="{StaticResource ImgBtnBotBtns}" Grid.Column="3" Grid.Row="0"/>
 
             <!--SPECIAL FUNCTION BUTTONS-->
