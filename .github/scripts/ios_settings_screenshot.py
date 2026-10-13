@@ -20,6 +20,9 @@ Flow, exactly as a user would do it - each screenshot is numbered by step:
    11. tap the nav bar's "Home" item to return       -> 12-home-after-readings.png
    12. tap the "File Manager" tile                   -> 13-file-manager-again.png
    13. tap the nav bar's "Adv." item                 -> 14-advanced-file-manager.png
+   14. tap "Reload Backed Up Accounts", screenshot
+       the dialog ("No Files Found" on a fresh
+       install, else the overwrite warning)          -> 15-reload-backup-accounts.png
 
 Accessibility-tree dumps are saved alongside as tree-*.json (not numbered, so
 the numbers belong to the screenshots alone).
@@ -646,6 +649,76 @@ def open_advanced(driver, tablet=False):
     raise SystemExit("could not reach the Advanced Features page after 3 taps")
 
 
+def reload_backup_accounts(driver):
+    """Tap "Reload Backed Up Accounts" and capture what it raises.
+
+    On a fresh install the backup table is empty, so a "No Files Found"
+    alert appears and is confirmed with OK (back on the Advanced page). If a
+    previous run left backup rows, the "Warning!" overwrite dialog appears
+    instead: confirm it, wait out the restore, screenshot the result, and
+    confirm any "Success" dialog (the app then returns to the Main Menu).
+    """
+    _node, frame = driver.wait_for(
+        lambda nodes: find_tappable(nodes, "Reload Backed Up Accounts"),
+        "the Reload Backed Up Accounts button",
+    )
+    driver.tap(*center(frame))
+    driver.quiet(20)
+
+    alert = driver.wait_for(
+        lambda nodes: find_label(nodes, "No Files Found")
+        or find_label(nodes, "Warning!"),
+        "the reload-backup dialog",
+        timeout=60,
+    )
+    log(f"  dialog shown: {label_of(alert[0])!r}")
+    driver.screenshot("15-reload-backup-accounts.png")
+
+    if label_of(alert[0]).strip().casefold() != "warning!":
+        ok = find_tappable(driver.tree(), "OK")
+        if not ok:
+            raise SystemExit('no OK button on the No Files Found dialog')
+        log("  tap OK (nothing backed up on a fresh install)")
+        driver.tap(*center(ok[1]))
+        driver.quiet(15)
+        driver.wait_for(
+            lambda nodes: find_label(nodes, "Advanced Features"),
+            "the Advanced Features page",
+            timeout=60,
+        )
+        return
+
+    overwrite = find_tappable(driver.tree(), "Yes, overwrite file")
+    if not overwrite:
+        raise SystemExit('no "Yes, overwrite file" button to confirm with')
+    log('  tap "Yes, overwrite file"')
+    driver.tap(*center(overwrite[1]))
+    # DB restore from the backup table; quiet also settles the loading UI.
+    driver.quiet(60)
+    driver.screenshot("16-backup-accounts-restored.png")
+
+    nodes = driver.tree()
+    if find_label(nodes, "Success"):
+        ok = find_tappable(nodes, "OK")
+        if not ok:
+            raise SystemExit('no OK button on the Success dialog')
+        log("  tap OK on Success")
+        driver.tap(*center(ok[1]))
+        driver.quiet(20)
+        driver.wait_for(
+            lambda ns: find_label(ns, "Main Menu"),
+            "the Main Menu after the backup restore",
+            timeout=90,
+        )
+        driver.screenshot("17-main-menu-after-restore.png")
+        log("  backup accounts reloaded - readings are on device")
+        return
+    if find_label(nodes, "Advanced Features"):
+        log("  restore finished, still on the Advanced page")
+        return
+    raise SystemExit("unknown state after confirming the backup restore")
+
+
 def goto_reading_index(driver, index):
     """Tap "Next account" until the requested 1-based reading is showing.
 
@@ -813,7 +886,8 @@ def main():
     # Continue the journey from a known-good Settings page: back to the Main
     # Menu, then into the File Manager, then Download New Readings ->
     # Get from Cloud -> tap the readings file -> Enter Readings at the
-    # requested index -> Home -> File Manager -> Adv., capturing each dialog.
+    # requested index -> Home -> File Manager -> Adv. -> Reload Backed Up
+    # Accounts, capturing each dialog.
     try:
         go_home(driver)
         open_file_manager(driver)
@@ -825,6 +899,7 @@ def main():
         go_home(driver, "12-home-after-readings.png")
         open_file_manager(driver, "13-file-manager-again.png")
         open_advanced(driver, tablet=args.tablet)
+        reload_backup_accounts(driver)
     except SystemExit as exc:
         log(f"FAILED: {exc}")
         # Leave behind what the screen and the tree actually showed, so a
