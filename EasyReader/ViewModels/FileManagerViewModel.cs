@@ -1256,28 +1256,40 @@ namespace EasyReader.ViewModels
                  AppServices.UserDialogs.ShowLoading("Connecting to Server...", MaskType.Gradient);
 
                 // initialize ftp client, connect, set working directory
-                FtpClient = new FtpClient();
-                NetworkCredential credentials = new NetworkCredential
+                // NOTE: async FTP calls are required - sync connect/getlisting block
+                // the UI thread on iOS (freeze/flash), which made the whole app feel
+                // locked after tapping "Download New Service Orders".
+                var client = new AsyncFtpClient
                 {
-                    UserName = "UTILITY",
-                    Password = "0rangeCounty14"
-                };
-                FtpClient.LoadProfile(new FtpProfile
-                {
-                    Host = "ftp://files.waterbill.com",
-                    Credentials = credentials,
-                   Encryption = FtpEncryptionMode.None,
-                    Protocols = System.Security.Authentication.SslProtocols.None,
-                    DataConnection = FtpDataConnectionType.PASV,
+                    Host = "files.waterbill.com",
+                    // same credentials every mobile client uses; the host folder is the discriminator
+                    Credentials = new NetworkCredential
+                    {
+                        UserName = "UTILITY",
+                        Password = "0rangeCounty14"
+                    },
                     Encoding = Encoding.UTF8
-                });
-                FtpClient.Connect();
-                string workingDirectory = "/" + Properties.HostFolder + "/ServiceOrders/TOCLIENT/";
+                };
+                client.Config.EncryptionMode = FtpEncryptionMode.None;
+                client.Config.SslProtocols = System.Security.Authentication.SslProtocols.None;
+                client.Config.DataConnectionType = FtpDataConnectionType.PASV;
+                client.Config.ConnectTimeout = 15000;
+                client.Config.ReadTimeout = 15000;
+                client.Config.DataConnectionConnectTimeout = 15000;
+                client.Config.DataConnectionReadTimeout = 15000;
+                FtpClient = client;
+                await FtpClient.Connect();
+                string workingDirectory = "/" + Properties.HostFolder.Trim() + "/ServiceOrders/TOCLIENT/";
                 //string workingDirectory = "/Gretchen/ServiceOrders/TOCLIENT/"; // TESTING
-                AppServices.UserDialogs.HideLoading();
+                // Await the pop before presenting - on iOS an action sheet shown
+                // while the loading modal is still on top is silently dropped.
+                await AppServices.UserDialogs.HideLoadingAsync();
+                await Task.Delay(300);
                 // get paths of all so's in folder, return if none
-                FtpListItem[] ftpItems = FtpClient.GetListing(workingDirectory);
-                string[] fileNames = ftpItems.Select(item => item.Name).ToArray();
+                FtpListItem[] ftpItems = await FtpClient.GetListing(workingDirectory);
+                string[] fileNames = ftpItems
+                    .Where(item => item.Type == FtpObjectType.File)
+                    .Select(item => item.Name).ToArray();
                 if (fileNames.Count() == 0)
                 {
                     await Application.Current.MainPage.DisplayAlert("No Files Found", "There are no service order files in the host folder.", "OK");
@@ -1362,12 +1374,16 @@ namespace EasyReader.ViewModels
                 DeleteTables();
 
                 // initialize local variables + xml reader
-                string workingDirectory = "/" + Properties.HostFolder + "/ServiceOrders/TOCLIENT/";
+                string workingDirectory = "/" + Properties.HostFolder.Trim() + "/ServiceOrders/TOCLIENT/";
                 //string workingDirectory = "/Gretchen/ServiceOrders/TOCLIENT/"; // TESTING
-                AppServices.UserDialogs.HideLoading();
+                // Await the pop so the modal does not cover whatever we raise next.
+                await AppServices.UserDialogs.HideLoadingAsync();
+                await Task.Delay(300);
                 // get paths of all so's in folder, return if none
-                FtpListItem[] ftpItems = FtpClient.GetListing(workingDirectory);
-                string[] fileNames = ftpItems.Select(item => item.Name).ToArray();
+                FtpListItem[] ftpItems = await FtpClient.GetListing(workingDirectory);
+                string[] fileNames = ftpItems
+                    .Where(item => item.Type == FtpObjectType.File)
+                    .Select(item => item.Name).ToArray();
                 if (fileNames.Count() == 0)
                 {
                     await Application.Current.MainPage.DisplayAlert("No Files Found", "There are no service order files in the host folder.", "OK");
@@ -1393,7 +1409,7 @@ namespace EasyReader.ViewModels
                     // switch to per-file download loading to provide better feedback
                     AppServices.UserDialogs.HideLoading();
                     AppServices.UserDialogs.ShowLoading("Downloading File...", MaskType.Gradient);
-                    using (var stream = FtpClient.OpenRead(workingDirectory + file.Name))
+                    using (var stream = await FtpClient.OpenRead(workingDirectory + file.Name))
                     using (XmlReader xmlReader = XmlReader.Create(stream, xmlReaderSettings))
                     {
                         while (xmlReader.Read())
@@ -1740,7 +1756,7 @@ namespace EasyReader.ViewModels
                     }
                     // hide per-file loading and delete so from server
                     AppServices.UserDialogs.HideLoading();
-                    FtpClient.DeleteFile(workingDirectory + file.Name);
+                    await FtpClient.DeleteFile(workingDirectory + file.Name);
                 }
                 // insert + create directory for last so
                 InsertServiceOrder(so);
@@ -2378,7 +2394,8 @@ namespace EasyReader.ViewModels
 
         // NON BINDING VARIABLES
         string CsvWritePath { get; set; }
-        FtpClient FtpClient { get; set; }
+        // Async client - sync FtpClient calls block the UI thread on iOS.
+        AsyncFtpClient FtpClient { get; set; }
         bool SelectAllFilesToDownloadBool { get; set; }
 
         // BINDING COLLECTIONS
