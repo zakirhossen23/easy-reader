@@ -4,14 +4,21 @@
 #   1. builds EasyReader for the iOS Simulator (no signing identity required)
 #   2. boots an iPhone simulator (or iPad when `tablet_mode` is true, or when
 #      `device_model` names an iPad) and installs + launches the app
-#   3. drives the UI with idb: Main Menu -> Settings tile -> Host Folder field
-#      -> types the folder path -> Home -> File Manager tile
-#      -> Download New Readings -> Get from Cloud -> tap the readings file
-#      -> Enter Readings at index -> Home -> File Manager
-#   4. uploads the screenshots as workflow artifacts (`settings-screenshot`,
-#      or `settings-screenshot-tablet` for iPad runs); the built .app is only
-#      uploaded when the `upload_app` input is true (default false, so manual
-#      runs stay small unless you opt in)
+#   3. drives the UI with idb. Two journeys (`scenario` input):
+#        settings-journey       Main Menu -> Settings -> Host Folder -> Home
+#                               -> File Manager -> Download New Readings ->
+#                               Get from Cloud -> Enter Readings -> Adv. ->
+#                               Reload Backed Up Accounts
+#        service-orders-repro   Main Menu -> Settings -> Host Folder -> Home
+#                               -> File Manager -> Download New Service Orders
+#                               -> then probes whether the app stays
+#                               interactive (Home, Enter Readings, Search
+#                               Accounts) to reproduce the "system locks up"
+#                               report after a Service Orders download
+#   4. uploads the screenshots as workflow artifacts (`settings-screenshot[-tablet]`
+#      or `service-orders-repro[-tablet]`); the built .app is only uploaded when
+#      the `upload_app` input is true (default false, so manual runs stay small
+#      unless you opt in)
 #
 # Why the simulator: simulator builds skip code signing entirely, so this runs
 # with no certificates, provisioning profiles or Apple credentials.
@@ -60,11 +67,17 @@ on:
         required: false
         default: false
         type: boolean
+      scenario:
+        description: Journey to run
+        required: false
+        default: settings-journey
+        type: string
   push:
     branches: [main]
     paths:
       - .github/workflows/ios-settings-screenshot.yml
       - .github/scripts/ios_settings_screenshot.py
+      - .github/scripts/ios_service_orders_repro.py
       - EasyReader/**
       - EasyReader.slnx
 
@@ -74,7 +87,7 @@ concurrency:
 
 jobs:
   build-and-screenshot:
-    name: Build, launch and walk the Settings/File Manager journey
+    name: Build, launch and walk the ${{ inputs.scenario || 'settings-journey' }} journey
     runs-on: macos-26
     timeout-minutes: 60
     env:
@@ -86,12 +99,13 @@ jobs:
       FOLDER_PATH: ${{ inputs.folder_path || 'ABC Utilities' }}
       TEST_FILE: ${{ inputs.test_file || 'Test File.csv' }}
       READING_INDEX: ${{ inputs.reading_index || '10' }}
+      SCENARIO: ${{ inputs.scenario || 'settings-journey' }}
       # Tablet default applies only when the model was left at the iPhone default.
       DEVICE_MODEL: ${{ (inputs.tablet_mode && (inputs.device_model == 'iPhone 17 Pro' || inputs.device_model == '')) && 'iPad Pro 11-inch (M4)' || inputs.device_model || 'iPhone 17 Pro' }}
       # A custom iPad device_model implies tablet mode even if the flag is off.
       # The `|| ''` guards keep startsWith null-safe on push events.
       TABLET_MODE: ${{ (inputs.tablet_mode || startsWith(inputs.device_model || '', 'iPad')) && 'true' || 'false' }}
-      ARTIFACT_NAME: ${{ (inputs.tablet_mode || startsWith(inputs.device_model || '', 'iPad')) && 'settings-screenshot-tablet' || 'settings-screenshot' }}
+      ARTIFACT_NAME: ${{ (inputs.tablet_mode || startsWith(inputs.device_model || '', 'iPad')) && format('{0}-tablet', (inputs.scenario == 'service-orders-repro' && 'service-orders-repro' || 'settings-screenshot')) || (inputs.scenario == 'service-orders-repro' && 'service-orders-repro' || 'settings-screenshot') }}
       # Boolean dispatch inputs arrive as the strings "true"/"false"; push runs
       # have an empty inputs context, which is falsy here too.
       UPLOAD_APP: ${{ inputs.upload_app || 'false' }}
@@ -237,19 +251,40 @@ jobs:
           xcrun simctl io "$SIM_UDID" screenshot \
             "$ARTIFACTS_DIR/screenshots/00-launch-screen.png" || true
 
-      # Settings -> Host Folder -> Home -> File Manager -> Download New Readings -> Get from Cloud -> tap readings file -> Enter Readings at index -> Home -> File Manager -> Adv. -> Reload Backed Up Accounts, screenshotting each leg.
+      # Settings -> Host Folder -> Home -> File Manager -> journey-specific
+      # legs, screenshotting each step.
+      # Pick the journey: `settings-journey` (default) drives Main Menu ->
+      # Settings -> File Manager -> Download New Readings, while
+      # `service-orders-repro` drives Settings -> File Manager -> Download New
+      # Service Orders and then probes whether the app stays interactive.
       - name: Walk the UI journey and capture screenshots
         run: |
           TABLET_FLAG=""
           if [ "$TABLET_MODE" = "true" ]; then TABLET_FLAG="--tablet"; fi
-          python3 .github/scripts/ios_settings_screenshot.py \
-            --udid "$SIM_UDID" \
-            --bundle-id "$BUNDLE_ID" \
-            --text "$FOLDER_PATH" \
-            --file "$TEST_FILE" \
-            --reading-index "$READING_INDEX" \
-            $TABLET_FLAG \
-            --out "$ARTIFACTS_DIR/screenshots"
+          case "$SCENARIO" in
+            settings-journey)
+              python3 .github/scripts/ios_settings_screenshot.py \
+                --udid "$SIM_UDID" \
+                --bundle-id "$BUNDLE_ID" \
+                --text "$FOLDER_PATH" \
+                --file "$TEST_FILE" \
+                --reading-index "$READING_INDEX" \
+                $TABLET_FLAG \
+                --out "$ARTIFACTS_DIR/screenshots"
+              ;;
+            service-orders-repro)
+              python3 .github/scripts/ios_service_orders_repro.py \
+                --udid "$SIM_UDID" \
+                --bundle-id "$BUNDLE_ID" \
+                --text "$FOLDER_PATH" \
+                $TABLET_FLAG \
+                --out "$ARTIFACTS_DIR/screenshots"
+              ;;
+            *)
+              echo "Unknown scenario: '$SCENARIO' (use settings-journey or service-orders-repro)"
+              exit 1
+              ;;
+          esac
 
       - name: Collect diagnostics
         if: always()
@@ -265,7 +300,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          # settings-screenshot (iPhone) or settings-screenshot-tablet (iPad).
+          # settings-screenshot[-tablet] or service-orders-repro[-tablet].
           name: ${{ env.ARTIFACT_NAME }}
           # *.png are the screenshots, tree-*.json are accessibility dumps.
           path: ${{ env.ARTIFACTS_DIR }}/screenshots/*
