@@ -1068,6 +1068,27 @@ namespace EasyReader.ViewModels
             }
         }
 
+        // APP VERSION
+        // Read from the app manifest so the UI can never drift from
+        // ApplicationDisplayVersion in EasyReader.csproj.
+        public static string AppVersionText
+        {
+            get
+            {
+                try
+                {
+                    string version = AppInfo.Current.VersionString;
+                    return string.IsNullOrWhiteSpace(version) ? "EasyReader" : "EasyReader v" + version;
+                }
+                catch
+                {
+                    return "EasyReader";
+                }
+            }
+        }
+
+        public string VersionText => AppVersionText;
+
         // ON PROPERTY CHANGED
         public event PropertyChangedEventHandler PropertyChanged;
         public void OnPropertyChanged([CallerMemberName]string propertyName = "") =>
