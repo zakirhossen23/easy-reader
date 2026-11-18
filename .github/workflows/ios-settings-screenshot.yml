@@ -230,6 +230,12 @@ jobs:
         run: |
           xcrun simctl install "$SIM_UDID" "$APP_PATH"
           xcrun simctl launch "$SIM_UDID" "$BUNDLE_ID"
+          # Grab the native launch screen before MAUI draws its first frame, so
+          # splash regressions (wrong artwork on iPad, uncentred image, missing
+          # storyboard) show up in the artifact instead of only on a device.
+          mkdir -p "$ARTIFACTS_DIR/screenshots"
+          xcrun simctl io "$SIM_UDID" screenshot \
+            "$ARTIFACTS_DIR/screenshots/00-launch-screen.png" || true
 
       # Settings -> Host Folder -> Home -> File Manager -> Download New Readings -> Get from Cloud -> tap readings file -> Enter Readings at index -> Home -> File Manager -> Adv. -> Reload Backed Up Accounts, screenshotting each leg.
       - name: Walk the UI journey and capture screenshots

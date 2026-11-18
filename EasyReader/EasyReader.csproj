@@ -99,8 +99,12 @@
 	<ItemGroup>
         <!-- App Icon - use vector SVG source so MAUI generates correct platform icons -->
 
-        <!-- Splash Screen - use SVG source if available so MAUI generates platform-specific splash images -->
-        <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="512,512" />
+        <!-- No MauiSplashScreen on purpose: the generated MauiSplash storyboard
+             draws its image centred at native size, which put the legacy square
+             wordmark on a purple field (very visible on iPad). iOS now ships a
+             real launch storyboard (Platforms/iOS/LaunchScreen.storyboard) that
+             fills the screen with the branded artwork, and Android keeps using
+             its own SplashActivity + @drawable/splash_screen theme. -->
 
 		<!-- Images (include subfolders like Icons) -->
 		<MauiImage Include="Resources\Images\**\*" />
@@ -121,7 +125,17 @@
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
-    <!-- Remove legacy Android platform-specific images so MAUI-generated icons are used instead -->
+    <!-- iOS launch screen.
+         LaunchScreen.storyboard is compiled into LaunchScreen.storyboardc and
+         referenced by UILaunchStoryboardName in Platforms/iOS/Info.plist. It
+         uses splash_background.png, which the MauiImage entry below copies into
+         the app bundle root (the same artwork Android shows). -->
+    <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+        <InterfaceDefinition Include="Platforms\iOS\LaunchScreen.storyboard" />
+        <!-- Ship the compiled storyboard only, not the raw XML as well. -->
+        <BundleResource Remove="Platforms\iOS\LaunchScreen.storyboard" />
+    </ItemGroup>
+
     <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
         <!-- Remove any drawable or mipmap PNGs that may conflict with MAUI generated assets -->
         <MauiImage Remove="Platforms\Android\Resources\drawable\*.png" />
