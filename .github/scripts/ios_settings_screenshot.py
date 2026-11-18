@@ -754,19 +754,26 @@ def fill_host_folder(driver, text):
     log(f"  host folder field at {frame}")
 
     for attempt in (1, 2):
+        if attempt > 1:
+            # Clear first: a partially committed first pass must not be
+            # appended to, or the field ends up "ABC UtilitiesABC Utilities".
+            existing = host_folder_value(driver.tree(), label_frame)
+            for _ in range(len(existing) + 2):
+                driver.idb("ui", "key", "42")  # HID usage 42 = Delete/Backspace
+            time.sleep(1)
         driver.tap(*center(frame))
         time.sleep(1.5)
         driver.type_text(text)
-        time.sleep(1.5)
+        time.sleep(1.0)
         # Return dismisses the software keyboard so it does not cover the
         # screenshot; a single-line Entry drops the character itself.
         driver.type_text("\n")
-        time.sleep(1.5)
 
-        current = driver.tree(tag=f"tree-settings-after-typing-{attempt}")
-        if text_was_entered(current, text):
+        if wait_for_text_entry(driver, text):
+            driver.tree(tag=f"tree-settings-after-typing-{attempt}")
             log(f"  verified: Host Folder == {text!r}")
             return
+        driver.tree(tag=f"tree-settings-after-typing-{attempt}")
         log(f"  !! attempt {attempt}: Host Folder field does not hold {text!r} yet")
 
     raise SystemExit(f"typing {text!r} into the Host Folder field failed")
@@ -815,6 +822,12 @@ def pick_host_folder_field(nodes, label_frame):
     return fields[0] if fields else None
 
 
+def host_folder_value(nodes, label_frame):
+    """Text currently in the Host Folder field ("" when the tree is silent)."""
+    target = pick_host_folder_field(nodes, label_frame)
+    return value_of(target[0]) if target else ""
+
+
 def text_was_entered(nodes, text):
     wanted = text.strip().casefold()
     for node in nodes:
@@ -823,6 +836,23 @@ def text_was_entered(nodes, text):
         if value_of(node).strip().casefold() == wanted:
             return True
     return False
+
+
+def wait_for_text_entry(driver, text, timeout=12):
+    """Poll the accessibility tree until the field holds `text`.
+
+    A single snapshot right after `idb ui text` is racy: on an iPad the tree can
+    still report the previous value while UIKit is committing the edit, which
+    used to trigger a second typing pass that appended the text twice
+    ("ABC UtilitiesABC Utilities") and then failed verification.
+    """
+    deadline = time.time() + timeout
+    while True:
+        if text_was_entered(driver.tree(), text):
+            return True
+        if time.time() >= deadline:
+            return False
+        time.sleep(1)
 
 
 # -------------------------------------------------------------------- main --
