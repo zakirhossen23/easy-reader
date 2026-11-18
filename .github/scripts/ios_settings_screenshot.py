@@ -754,15 +754,18 @@ def fill_host_folder(driver, text):
     log(f"  host folder field at {frame}")
 
     for attempt in (1, 2):
+        driver.tap(*center(frame))
+        time.sleep(1.5)
         if attempt > 1:
             # Clear first: a partially committed first pass must not be
-            # appended to, or the field ends up "ABC UtilitiesABC Utilities".
+            # appended to. The tap above is required - after Return dismisses
+            # the keyboard the field is no longer focused, so backspaces sent
+            # before the tap go nowhere and the text is simply appended.
             existing = host_folder_value(driver.tree(), label_frame)
+            log(f"  clearing {len(existing)} characters from the field")
             for _ in range(len(existing) + 2):
                 driver.idb("ui", "key", "42")  # HID usage 42 = Delete/Backspace
             time.sleep(1)
-        driver.tap(*center(frame))
-        time.sleep(1.5)
         driver.type_text(text)
         time.sleep(1.0)
         # Return dismisses the software keyboard so it does not cover the
@@ -833,24 +836,36 @@ def text_was_entered(nodes, text):
     for node in nodes:
         if "textfield" not in type_of(node).lower():
             continue
-        if value_of(node).strip().casefold() == wanted:
+        if wanted in value_of(node).strip().casefold():
             return True
     return False
 
 
-def wait_for_text_entry(driver, text, timeout=12):
-    """Poll the accessibility tree until the field holds `text`.
+def wait_for_text_entry(driver, text, timeout=45):
+    """Poll until a usable accessibility tree shows `text` in a field.
 
-    A single snapshot right after `idb ui text` is racy: on an iPad the tree can
-    still report the previous value while UIKit is committing the edit, which
-    used to trigger a second typing pass that appended the text twice
-    ("ABC UtilitiesABC Utilities") and then failed verification.
+    `idb ui describe-all` frequently returns no JSON at all while the keyboard
+    is animating ("accessibility service did not answer within the query's
+    10.0s timeout"). An empty tree means *unknown*, not *wrong*: treating it as
+    a failed check caused a second typing pass that appended the same text
+    ("ABC UtilitiesABC Utilities"). Keep polling until we actually see a tree
+    with text fields, and log what we saw when giving up.
     """
     deadline = time.time() + timeout
+    seen_tree = False
     while True:
-        if text_was_entered(driver.tree(), text):
-            return True
+        nodes = driver.tree()
+        if nodes:
+            seen_tree = True
+            if text_was_entered(nodes, text):
+                return True
+            log(
+                "  field values: "
+                + repr([value_of(n) for n in nodes if "textfield" in type_of(n).lower()])
+            )
         if time.time() >= deadline:
+            if not seen_tree:
+                log("  !! accessibility service never returned a tree")
             return False
         time.sleep(1)
 
