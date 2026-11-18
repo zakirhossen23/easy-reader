@@ -171,19 +171,27 @@ def download_service_orders(driver):
 def tap_back_arrow(driver, tablet=False):
     """Tap the nav-bar back ("arrow") item on a pushed page.
 
-    The app's Home ToolbarItem is not exposed in the idb accessibility tree,
-    so the arrow is hit by geometry. On iPhone the leading item cluster (back
-    chevron + "Home" label) sits at roughly x = 0.29 * width, y = 83pt; on the
-    tablet iPad at x = 60pt, y = 46pt (mirroring the Adv. pill opposite it).
+    iOS shows "‹ Home" (the previous page's title) at the trailing/leading
+    edge of the bar, but its exact x is theme- and version-dependent, and its
+    hit region is wider than the drawn glyphs, so sweep plausible leading-edge
+    candidates and stop as soon as the Main Menu appears. ToolbarItems are not
+    exposed in the idb accessibility tree, so this must be done by geometry.
     """
-    width = 402.0
-    for node in driver.tree():
-        if type_of(node).lower() == "application" and frame_of(node):
-            width = frame_of(node)["width"] or width
-            break
-    x, y = ((60.0, 46.0) if tablet else (0.29 * width, 83.0))
-    log(f"  tap the back arrow ({x:.1f}, {y:.1f})")
-    driver.tap(x, y)
+    if tablet:
+        candidates = [(60.0, 46.0)]
+    else:
+        candidates = [(x, 73.0) for x in
+                      (10.0, 20.0, 30.0, 45.0, 60.0, 75.0, 90.0, 105.0, 120.0, 138.0)]
+
+    for x, y in candidates:
+        log(f"  tap the back arrow ({x:.1f}, {y:.1f})")
+        driver.tap(x, y)
+        driver.quiet(6)
+        nodes = driver.tree()
+        if find_label(nodes, "Main Menu"):
+            log(f"  the back arrow hit at ({x:.1f}, {y:.1f})")
+            return x, y
+    return None
 
 
 def expect_main_menu(driver, screenshot, timeout=90):
@@ -279,16 +287,21 @@ def probe_responsiveness(driver, so_result, tablet=False):
         # Probe B: the back arrow must take us to the Main Menu after the
         # OK tap on "No Files Found" - this is the gesture the user reports
         # stops working.
-        tap_back_arrow(driver, tablet=tablet)
-        if expect_main_menu(driver, "11-back-home.png", timeout=90):
-            res.append("back arrow: OK")
+        tapped = tap_back_arrow(driver, tablet=tablet)
+        if tapped is not None:
+            driver.quiet(15)
+            if expect_main_menu(driver, "11-back-home.png", timeout=30):
+                res.append("back arrow: OK")
+            else:
+                res.append("back arrow: tapped but the Main Menu never appeared (locked?)")
+                return res
         else:
             try:
                 driver.tree(tag="tree-so-back-arrow-failed")
                 driver.screenshot("99-failed-state.png")
             except Exception:
                 pass
-            res.append("back arrow: never reached the Main Menu (locked?)")
+            res.append("back arrow: no candidate tap reached the Main Menu (locked?)")
             return res
 
         res += probe_main_menu_tiles(driver)
