@@ -20,17 +20,34 @@ Flow, exactly as a user would do it - each step is numbered by screenshot:
         tap "Download New Service Orders" again and
         require the same alert to re-appear - proves
         no other button was left working              -> 10-second-attempt.png
-   10b. IF the SOs downloaded: wait for the Main
-        Menu, then open Enter Readings / Search
-        Accounts and verify they are tappable          -> 10..14-*.png
+   10b. IF "No Files Found": tap the nav-bar back
+        ("arrow"/chevron) item and require Main Menu
+        to come up - this is the user's "back to home
+        page arrow" check                          -> 11-back-home.png
+   10c. IF the SOs downloaded: wait for the Main
+        Menu                                        -> 10-home-after-so-download.png
+    11. from the Main Menu, open Enter Readings and
+        verify the page opens                       -> 12-enter-readings-after-so.png
+    12. return to the Main Menu                     -> 13-home-after-enter-readings.png
+    13. open Search Accounts and verify the page     -> 14-search-accounts-after-so.png
+    14. return to the Main Menu (final state)        -> 15-home-final.png
 
 The user reports that on an empty server "click download service order after
 click ok it is getting stuck eman no other button is working" - the loading
 overlay is stranded above the main page and swallows all touches. The fix
 (SelectSOs/FtpDownload now use async FTP calls and pop the overlay before
 raising the next dialog) is committed separately; this reproducer fails the
-workflow when the app stops responding after that OK tap, and passes when the
-UI stays alive.
+workflow when the app stops responding after that OK tap (including when the
+nav-bar back arrow does nothing), and passes when the UI stays alive.
+
+Interactivity after the OK tap is probed in two ways:
+  A. re-tap "Download New Service Orders" and require the no-files alert -
+     proves touches are landing on the File Manager page;
+  B. tap the nav-bar back arrow and require the Main Menu - the exact
+     gesture the user did not have working.
+The arrow is probed by geometry (the app's ToolbarItems are NOT exposed in
+the idb accessibility tree): on iPhone the leading back item sits at about
+0.29 x screen-width, y = 83pt; on tablet-mode iPad at x = 60pt, y = 46pt.
 
 Accessibility-tree dumps are saved alongside as tree-*.json.
 
@@ -151,16 +168,78 @@ def download_service_orders(driver):
     return alert_label
 
 
-def probe_responsiveness(driver, so_result):
+def tap_back_arrow(driver, tablet=False):
+    """Tap the nav-bar back ("arrow") item on a pushed page.
+
+    The app's Home ToolbarItem is not exposed in the idb accessibility tree,
+    so the arrow is hit by geometry. On iPhone the leading item cluster (back
+    chevron + "Home" label) sits at roughly x = 0.29 * width, y = 83pt; on the
+    tablet iPad at x = 60pt, y = 46pt (mirroring the Adv. pill opposite it).
+    """
+    width = 402.0
+    for node in driver.tree():
+        if type_of(node).lower() == "application" and frame_of(node):
+            width = frame_of(node)["width"] or width
+            break
+    x, y = ((60.0, 46.0) if tablet else (0.29 * width, 83.0))
+    log(f"  tap the back arrow ({x:.1f}, {y:.1f})")
+    driver.tap(x, y)
+
+
+def expect_main_menu(driver, screenshot, timeout=90):
+    """Wait for the Main Menu and screenshot it; True if it came up."""
+    try:
+        driver.wait_for(
+            lambda nodes: find_label(nodes, "Main Menu"),
+            "the Main Menu",
+            timeout=timeout,
+        )
+        driver.screenshot(screenshot)
+        return True
+    except SystemExit:
+        return False
+
+
+def probe_main_menu_tiles(driver):
+    """Shared tail: from the Main Menu, open Enter Readings / Search Accounts."""
+    res = []
+    try:
+        tap_tile(driver, "Enter Readings", "New Reading:",
+                 "12-enter-readings-after-so.png")
+        res.append("Enter Readings: OK")
+        go_home(driver, "13-home-after-enter-readings.png")
+    except SystemExit as exc:
+        res.append(f"Enter Readings: {exc}")
+        try:
+            driver.tree(tag="tree-so-enter-readings-failed")
+        except Exception:
+            pass
+
+    try:
+        tap_tile(driver, "Search Accounts", "Missing Readings:",
+                 "14-search-accounts-after-so.png")
+        res.append("Search Accounts: OK")
+        go_home(driver, "15-home-final.png")
+    except SystemExit as exc:
+        res.append(f"Search Accounts: {exc}")
+        try:
+            driver.tree(tag="tree-so-search-accounts-failed")
+        except Exception:
+            pass
+    return res
+
+
+def probe_responsiveness(driver, so_result, tablet=False):
     """Verify the app did not lock up after the SO download/alert.
 
     Two scenarios, matching exactly what the user reports:
 
     * "no-files" - the server has no SOs (or none selected): the app shows
       "No Files Found", the user taps OK, and "no other button is working"
-      right after. Probe: tap "Download New Service Orders" again and expect
-      the same "No Files Found" alert to re-appear within 60s. Nothing can be
-      stuck if the UI answers that tap.
+      right after. Probe A re-taps "Download New Service Orders" and expects
+      the same alert to re-appear within 60s (proves touches land). Probe B,
+      the user's actual next move, taps the nav-bar back arrow and requires
+      the Main Menu to come up.
     * success feedback - SOs downloaded: the app routes itself to the Main
       Menu. Probe: wait for the Main Menu, then Enter Readings / Search
       Accounts are tappable.
@@ -174,18 +253,20 @@ def probe_responsiveness(driver, so_result):
             timeout=30,
         )
         driver.tap(*center(frame))
+        second_ok = False
         try:
             driver.wait_for(
                 lambda nodes: find_label(nodes, "No Files Found"),
                 "the No Files Found alert on the second attempt",
                 timeout=60,
             )
-            log("  probe: No Files Found re-presented - UI responsive")
+            log("  probe A (re-tap): No Files Found re-presented - UI responsive")
             driver.screenshot("10-second-attempt.png")
             ok = find_tappable(driver.tree(), "OK")
             if ok:
                 driver.tap(*center(ok[1]))
                 driver.quiet(10)
+            second_ok = True
             res.append("second attempt: OK")
         except SystemExit as exc:
             try:
@@ -194,21 +275,30 @@ def probe_responsiveness(driver, so_result):
             except Exception:
                 pass
             res.append(f"second attempt: {exc}")
-        except Exception as exc:
-            res.append(f"second attempt: {exc!r}")
+
+        # Probe B: the back arrow must take us to the Main Menu after the
+        # OK tap on "No Files Found" - this is the gesture the user reports
+        # stops working.
+        tap_back_arrow(driver, tablet=tablet)
+        if expect_main_menu(driver, "11-back-home.png", timeout=90):
+            res.append("back arrow: OK")
+        else:
+            try:
+                driver.tree(tag="tree-so-back-arrow-failed")
+                driver.screenshot("99-failed-state.png")
+            except Exception:
+                pass
+            res.append("back arrow: never reached the Main Menu (locked?)")
+            return res
+
+        res += probe_main_menu_tiles(driver)
         return res
 
     # SO download finished - the app auto-routes to the Main Menu.
-    try:
-        driver.wait_for(
-            lambda nodes: find_label(nodes, "Main Menu"),
-            "the Main Menu after the Service Orders download",
-            timeout=90,
-        )
-        driver.screenshot("10-home-after-so-download.png")
+    if expect_main_menu(driver, "10-home-after-so-download.png", timeout=90):
         res.append("main menu: OK")
-    except SystemExit as exc:
-        res.append(f"main menu after SO download: {exc}")
+    else:
+        res.append("main menu after SO download: never appeared (locked?)")
         try:
             driver.tree(tag="tree-so-mainmenu-failed")
             driver.screenshot("99-failed-state.png")
@@ -216,31 +306,7 @@ def probe_responsiveness(driver, so_result):
             pass
         return res
 
-    try:
-        tap_tile(driver, "Enter Readings", "New Reading:",
-                 "11-enter-readings-after-so.png")
-        res.append("Enter Readings: OK")
-        go_home(driver, "12-home-after-enter-readings.png")
-    except SystemExit as exc:
-        res.append(f"Enter Readings: {exc}")
-        try:
-            driver.tree(tag="tree-so-enter-readings-failed")
-        except Exception:
-            pass
-
-    try:
-        tap_tile(driver, "Search Accounts", "Missing Readings:",
-                 "13-search-accounts-after-so.png")
-        res.append("Search Accounts: OK")
-        go_home(driver, "14-home-final.png")
-    except SystemExit as exc:
-        res.append(f"Search Accounts: {exc}")
-        try:
-            driver.tree(tag="tree-so-search-accounts-failed")
-        except Exception:
-            pass
-
-    return res
+    return res + probe_main_menu_tiles(driver)
 
 
 def main():
@@ -250,7 +316,7 @@ def main():
                         help="folder path to type into Host Folder")
     parser.add_argument("--out", required=True, help="screenshot output directory")
     parser.add_argument("--tablet", action="store_true",
-                        help="iPad geometry (unused by this journey)")
+                        help="iPad geometry for the nav-bar back arrow tap")
     parser.add_argument("--bundle-id",
                         default="com.creativetechusa.easyreader",
                         help="app bundle id, used only by the relaunch fallback")
@@ -277,7 +343,7 @@ def main():
         open_file_manager(driver)
         so_result = download_service_orders(driver)
 
-        results = probe_responsiveness(driver, so_result)
+        results = probe_responsiveness(driver, so_result, tablet=args.tablet)
         for line in results:
             log(f"  responsiveness: {line}")
         locked = [line for line in results
