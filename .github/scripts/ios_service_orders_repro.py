@@ -9,24 +9,28 @@ Flow, exactly as a user would do it - each step is numbered by screenshot:
     4. tap the nav bar's "Home" item to return          -> 04-home-again.png
     5. tap the "File Manager" tile                      -> 05-file-manager.png
     6. tap "Download New Service Orders" and screenshot
-       the Choose Files to Download sheet               -> 06-download-service-orders-sheet.png
-    7. tap "Download all files (N)"                     -> 07-download-service-orders-tapped.png
-    8. wait for the result alert, screenshot it          -> 08-download-service-orders-result.png
-    9. confirm OK on Success (app navigates to Main
-       Menu itself via GoTo_MainPageAsync_)             -> 09-download-confirmed.png
-   10. verify the Main Menu is interactive after the
-       download (expected, but where the lock-up shows)  -> 10-home-after-so-download.png
-   11. tap "Enter Readings" and verify the page opens   -> 11-enter-readings-after-so.png
-   12. tap the nav bar's "Home" item to return          -> 12-home-after-enter-readings.png
-   13. tap "Search Accounts" and verify the page opens   -> 13-search-accounts-after-so.png
-   14. tap the nav bar's "Home" item (final state)       -> 14-home-final.png
+       the Choose Files to Download sheet (or the empty-
+       server "No Files Found" alert, which is the
+       reported case)                                -> 06-download-service-orders-sheet.png
+    7. tap "Download all files (N)" (skipped if the
+       alert shown in step 6 was "No Files Found")  -> 07-download-service-orders-tapped.png
+    8. wait for the result alert, screenshot it      -> 08-download-service-orders-result.png
+    9. confirm OK on the result alert                 -> 09-download-confirmed.png
+   10a. IF "No Files Found" (the reported case):
+        tap "Download New Service Orders" again and
+        require the same alert to re-appear - proves
+        no other button was left working              -> 10-second-attempt.png
+   10b. IF the SOs downloaded: wait for the Main
+        Menu, then open Enter Readings / Search
+        Accounts and verify they are tappable          -> 10..14-*.png
 
-The user reports that after a Service Orders download "it locks the system
-up": tapping the back button or navigating home and tapping other tiles stops
-working. Steps 10-14 are the responsiveness probe - whichever of them cannot
-be performed (tap produces no page, accessibility tree goes silent, or the
-Home pop never lands) fails the run, and the uploaded artifact shows the last
-screen plus the failure state.
+The user reports that on an empty server "click download service order after
+click ok it is getting stuck eman no other button is working" - the loading
+overlay is stranded above the main page and swallows all touches. The fix
+(SelectSOs/FtpDownload now use async FTP calls and pop the overlay before
+raising the next dialog) is committed separately; this reproducer fails the
+workflow when the app stops responding after that OK tap, and passes when the
+UI stays alive.
 
 Accessibility-tree dumps are saved alongside as tree-*.json.
 
@@ -147,11 +151,54 @@ def download_service_orders(driver):
     return alert_label
 
 
-def probe_responsiveness(driver):
-    """Whichever of these fails is where the lock-up shows up."""
+def probe_responsiveness(driver, so_result):
+    """Verify the app did not lock up after the SO download/alert.
+
+    Two scenarios, matching exactly what the user reports:
+
+    * "no-files" - the server has no SOs (or none selected): the app shows
+      "No Files Found", the user taps OK, and "no other button is working"
+      right after. Probe: tap "Download New Service Orders" again and expect
+      the same "No Files Found" alert to re-appear within 60s. Nothing can be
+      stuck if the UI answers that tap.
+    * success feedback - SOs downloaded: the app routes itself to the Main
+      Menu. Probe: wait for the Main Menu, then Enter Readings / Search
+      Accounts are tappable.
+    """
     res = []
 
-    # After a successful download the app routes itself to the Main Menu.
+    if so_result == "no-files":
+        _node, frame = driver.wait_for(
+            lambda nodes: find_tappable(nodes, "Download New Service Orders"),
+            "the Download New Service Orders button for the responsiveness probe",
+            timeout=30,
+        )
+        driver.tap(*center(frame))
+        try:
+            driver.wait_for(
+                lambda nodes: find_label(nodes, "No Files Found"),
+                "the No Files Found alert on the second attempt",
+                timeout=60,
+            )
+            log("  probe: No Files Found re-presented - UI responsive")
+            driver.screenshot("10-second-attempt.png")
+            ok = find_tappable(driver.tree(), "OK")
+            if ok:
+                driver.tap(*center(ok[1]))
+                driver.quiet(10)
+            res.append("second attempt: OK")
+        except SystemExit as exc:
+            try:
+                driver.tree(tag="tree-so-probe-failed")
+                driver.screenshot("99-failed-state.png")
+            except Exception:
+                pass
+            res.append(f"second attempt: {exc}")
+        except Exception as exc:
+            res.append(f"second attempt: {exc!r}")
+        return res
+
+    # SO download finished - the app auto-routes to the Main Menu.
     try:
         driver.wait_for(
             lambda nodes: find_label(nodes, "Main Menu"),
@@ -162,6 +209,12 @@ def probe_responsiveness(driver):
         res.append("main menu: OK")
     except SystemExit as exc:
         res.append(f"main menu after SO download: {exc}")
+        try:
+            driver.tree(tag="tree-so-mainmenu-failed")
+            driver.screenshot("99-failed-state.png")
+        except Exception:
+            pass
+        return res
 
     try:
         tap_tile(driver, "Enter Readings", "New Reading:",
@@ -222,9 +275,9 @@ def main():
         go_home(driver)
 
         open_file_manager(driver)
-        download_service_orders(driver)
+        so_result = download_service_orders(driver)
 
-        results = probe_responsiveness(driver)
+        results = probe_responsiveness(driver, so_result)
         for line in results:
             log(f"  responsiveness: {line}")
         locked = [line for line in results
