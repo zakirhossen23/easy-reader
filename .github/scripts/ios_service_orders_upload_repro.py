@@ -12,7 +12,7 @@ import sys
 
 from ios_settings_screenshot import (
     Driver, center, fill_host_folder, find_label, find_tappable, frame_of,
-    label_of, log, open_file_manager, open_settings, run, tap_tile, type_of,
+    label_of, log, open_file_manager, open_settings, run, tap_tile, type_of, value_of,
 )
 from ios_service_orders_repro import tap_back_arrow
 
@@ -129,7 +129,10 @@ def edit_order(driver):
     tap(driver, "X")
     tap(driver, "Enter Note")
     _, frame = driver.wait_for(
-        lambda nodes: find_tappable(nodes, "Enter Note..."),
+        lambda nodes: next(((node, frame_of(node)) for node in nodes
+                            if "textfield" in type_of(node).casefold()
+                            and value_of(node) == "Enter Note..."
+                            and frame_of(node)), None),
         "note entry field")
     driver.tap(*center(frame))
     note = "Service order upload navigation regression"
