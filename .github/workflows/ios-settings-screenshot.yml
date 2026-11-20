@@ -4,7 +4,7 @@
 #   1. builds EasyReader for the iOS Simulator (no signing identity required)
 #   2. boots an iPhone simulator (or iPad when `tablet_mode` is true, or when
 #      `device_model` names an iPad) and installs + launches the app
-#   3. drives the UI with idb. Two journeys (`scenario` input):
+#   3. drives the UI with idb. Three journeys (`scenario` input):
 #        settings-journey       Main Menu -> Settings -> Host Folder -> Home
 #                               -> File Manager -> Download New Readings ->
 #                               Get from Cloud -> Enter Readings -> Adv. ->
@@ -15,6 +15,11 @@
 #                               interactive (Home, Enter Readings, Search
 #                               Accounts) to reproduce the "system locks up"
 #                               report after a Service Orders download
+#        service-orders-upload-repro  First service file -> select a part ->
+#                               save a note -> upload Open -> upload Closed
+#                               -> verify home tiles without relaunching.
+#                               Requires test host data with parts and orders
+#                               in both statuses. Uploads files to TOHOST.
 #   4. uploads the screenshots as workflow artifacts (`settings-screenshot[-tablet]`
 #      or `service-orders-repro[-tablet]`); the built .app is only uploaded when
 #      the `upload_app` input is true (default false, so manual runs stay small
@@ -33,7 +38,7 @@ on:
   workflow_dispatch:
     inputs:
       folder_path:
-        description: Value to type into the Host Folder field
+        description: Host Folder (upload repro requires dedicated test data with parts and Open/Closed orders)
         required: false
         default: ABC Utilities
         type: string
@@ -71,13 +76,18 @@ on:
         description: Journey to run
         required: false
         default: settings-journey
-        type: string
+        type: choice
+        options:
+          - settings-journey
+          - service-orders-repro
+          - service-orders-upload-repro
   push:
     branches: [main]
     paths:
       - .github/workflows/ios-settings-screenshot.yml
       - .github/scripts/ios_settings_screenshot.py
       - .github/scripts/ios_service_orders_repro.py
+      - .github/scripts/ios_service_orders_upload_repro.py
       - EasyReader/**
       - EasyReader.slnx
 
@@ -105,7 +115,7 @@ jobs:
       # A custom iPad device_model implies tablet mode even if the flag is off.
       # The `|| ''` guards keep startsWith null-safe on push events.
       TABLET_MODE: ${{ (inputs.tablet_mode || startsWith(inputs.device_model || '', 'iPad')) && 'true' || 'false' }}
-      ARTIFACT_NAME: ${{ (inputs.tablet_mode || startsWith(inputs.device_model || '', 'iPad')) && format('{0}-tablet', (inputs.scenario == 'service-orders-repro' && 'service-orders-repro' || 'settings-screenshot')) || (inputs.scenario == 'service-orders-repro' && 'service-orders-repro' || 'settings-screenshot') }}
+      ARTIFACT_NAME: ${{ (inputs.tablet_mode || startsWith(inputs.device_model || '', 'iPad')) && format('{0}-tablet', (startsWith(inputs.scenario || '', 'service-orders-') && inputs.scenario || 'settings-screenshot')) || (startsWith(inputs.scenario || '', 'service-orders-') && inputs.scenario || 'settings-screenshot') }}
       # Boolean dispatch inputs arrive as the strings "true"/"false"; push runs
       # have an empty inputs context, which is falsy here too.
       UPLOAD_APP: ${{ inputs.upload_app || 'false' }}
@@ -280,8 +290,16 @@ jobs:
                 $TABLET_FLAG \
                 --out "$ARTIFACTS_DIR/screenshots"
               ;;
+            service-orders-upload-repro)
+              python3 .github/scripts/ios_service_orders_upload_repro.py \
+                --udid "$SIM_UDID" \
+                --bundle-id "$BUNDLE_ID" \
+                --text "$FOLDER_PATH" \
+                $TABLET_FLAG \
+                --out "$ARTIFACTS_DIR/screenshots"
+              ;;
             *)
-              echo "Unknown scenario: '$SCENARIO' (use settings-journey or service-orders-repro)"
+              echo "Unknown scenario: '$SCENARIO' (use settings-journey, service-orders-repro, or service-orders-upload-repro)"
               exit 1
               ;;
           esac

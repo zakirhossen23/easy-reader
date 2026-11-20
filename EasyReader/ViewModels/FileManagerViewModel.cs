@@ -2149,7 +2149,7 @@ namespace EasyReader.ViewModels
                         writer.Close();
                     }
                 }
-                AppServices.UserDialogs.HideLoading();
+                await AppServices.UserDialogs.HideLoadingAsync();
                 // change loading
                  AppServices.UserDialogs.ShowLoading("Connecting to Server...", MaskType.Gradient);
 
@@ -2173,7 +2173,7 @@ namespace EasyReader.ViewModels
                 client2.Connect();
                 string workingDirectory2 = "/" + Properties.HostFolder + "/ServiceOrders/TOHOST/";
                 //string workingDirectory = "/Gretchen/ServiceOrders/TOHOST/"; // TESTING
-                AppServices.UserDialogs.HideLoading();
+                await AppServices.UserDialogs.HideLoadingAsync();
                 // change loading
                 if (fileIDsList.Count == 1)
                      AppServices.UserDialogs.ShowLoading("Uploading File...", MaskType.Gradient);
@@ -2202,18 +2202,17 @@ namespace EasyReader.ViewModels
                         Properties.IsSODownloaded = false;
                     UpdateProperties();
                     XmlWritePaths = null;
-                    AppServices.UserDialogs.HideLoading();
+                    await AppServices.UserDialogs.HideLoadingAsync();
                     // alert success, return to main page
                     if (filesUploaded == 1)
                         await Application.Current.MainPage.DisplayAlert("Success", "1 file successfully uploaded to server.", "OK");
                     else
                         await Application.Current.MainPage.DisplayAlert("Success", filesUploaded.ToString() + " files successfully uploaded to server.", "OK");
-                     AppServices.UserDialogs.HideLoading();
                     await GoTo_MainPageAsync_(Navigation);
                 }
                 else
                 {
-                    AppServices.UserDialogs.HideLoading();
+                    await AppServices.UserDialogs.HideLoadingAsync();
                     // alert failure
                     await Application.Current.MainPage.DisplayAlert("Failure", "Something went wrong and the file was not uploaded. Please try again.", "OK");
 
@@ -2229,7 +2228,7 @@ namespace EasyReader.ViewModels
             catch (Exception ex)
             {
                 // hide loading
-                 AppServices.UserDialogs.HideLoading();
+                 await AppServices.UserDialogs.HideLoadingAsync();
 
                 // socket = no wifi while trying to connect to ftp server
                 // io = lost connection while trying to connect to ftp server
@@ -2263,7 +2262,7 @@ namespace EasyReader.ViewModels
                 XmlWritePaths = null;
 
                 // hide loading
-                 AppServices.UserDialogs.HideLoading();
+                 await AppServices.UserDialogs.HideLoadingAsync();
             }
         }
 
