@@ -2,8 +2,8 @@
 """Exercise service-order editing, Open/Closed uploads, and home navigation.
 
 Use a dedicated test host folder. This journey uploads real files to TOHOST.
-The first available service file must contain parts and both Open and Closed
-orders. Missing test data is a failure. The app is never relaunched.
+The first available service file must contain parts and at least two Open
+orders. One order is changed to Closed before uploading. The app is never relaunched.
 """
 import argparse
 import os
@@ -147,6 +147,12 @@ def edit_order(driver):
     tap(driver, "Save Note")
     expect(driver, "Select Parts")
     driver.screenshot("11-note-saved.png")
+    tap(driver, "Update Status")
+    expect(driver, "Update Service Order Status")
+    tap(driver, "CLOSED")
+    expect(driver, "Update Status")
+    expect(driver, "CLOSED")
+    driver.screenshot("11-order-status-closed.png")
 
 
 def upload_status(driver, status, number):

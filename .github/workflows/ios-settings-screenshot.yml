@@ -16,10 +16,10 @@
 #                               Accounts) to reproduce the "system locks up"
 #                               report after a Service Orders download
 #        service-orders-upload-repro  First service file -> select a part ->
-#                               save a note -> upload Open -> upload Closed
+#                               save a note -> change status to Closed -> upload Open -> upload Closed
 #                               -> verify home tiles without relaunching.
-#                               Requires test host data with parts and orders
-#                               in both statuses. Uploads files to TOHOST.
+#                               Requires test host data with parts and at least two Open orders.
+#                               Uploads files to TOHOST.
 #   4. uploads the screenshots as workflow artifacts (`settings-screenshot[-tablet]`
 #      or `service-orders-repro[-tablet]`); the built .app is only uploaded when
 #      the `upload_app` input is true (default false, so manual runs stay small
@@ -38,7 +38,7 @@ on:
   workflow_dispatch:
     inputs:
       folder_path:
-        description: Host Folder (upload repro requires dedicated test data with parts and Open/Closed orders)
+        description: Host Folder (upload repro requires test data with parts and at least two Open orders)
         required: false
         default: ABC Utilities
         type: string
